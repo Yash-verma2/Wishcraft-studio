@@ -1113,6 +1113,32 @@ function setupEventHandlers() {
     tabRecordBtn.addEventListener('click', toggleScreenRecording);
   }
 
+  // Custom Modal close events
+  const closeVideoModalBtn = document.getElementById('closeVideoModalBtn');
+  if (closeVideoModalBtn) {
+    closeVideoModalBtn.addEventListener('click', hideVideoExportSuccessModal);
+  }
+  const closeWarningModalBtn = document.getElementById('closeWarningModalBtn');
+  if (closeWarningModalBtn) {
+    closeWarningModalBtn.addEventListener('click', hideMobileScreenRecordWarning);
+  }
+  const closeWarningModalActionBtn = document.getElementById('closeWarningModalActionBtn');
+  if (closeWarningModalActionBtn) {
+    closeWarningModalActionBtn.addEventListener('click', hideMobileScreenRecordWarning);
+  }
+
+  // Close modals when clicking outside contents
+  window.addEventListener('click', (e) => {
+    const videoModal = document.getElementById('videoSuccessModal');
+    const warningModal = document.getElementById('mobileRecordWarningModal');
+    if (e.target === videoModal) {
+      hideVideoExportSuccessModal();
+    }
+    if (e.target === warningModal) {
+      hideMobileScreenRecordWarning();
+    }
+  });
+
   // Studio Record Mode buttons
   openRecordStudioBtn.addEventListener('click', enterStudioMode);
   studioExitBtn.addEventListener('click', exitStudioMode);
@@ -3147,6 +3173,73 @@ function startStudioPlayback() {
   }
 }
 
+// Dynamic format negotiator for WebM vs MP4 (iOS fallback)
+function getSupportedVideoFormat() {
+  const formats = [
+    { mime: 'video/mp4;codecs=h264,aac', ext: 'mp4' },
+    { mime: 'video/mp4;codecs=h264', ext: 'mp4' },
+    { mime: 'video/mp4', ext: 'mp4' },
+    { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
+    { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
+    { mime: 'video/webm', ext: 'webm' }
+  ];
+  if (typeof MediaRecorder === 'undefined') {
+    return { mime: '', ext: 'webm' };
+  }
+  for (const format of formats) {
+    if (typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(format.mime)) {
+      return format;
+    }
+  }
+  return { mime: '', ext: 'webm' }; // default fallback
+}
+
+// Show the premium video preview & download modal
+function showVideoExportSuccessModal(videoUrl, ext) {
+  const modal = document.getElementById('videoSuccessModal');
+  const video = document.getElementById('successModalVideo');
+  const dlLink = document.getElementById('downloadVideoLink');
+  
+  if (modal && video && dlLink) {
+    video.src = videoUrl;
+    dlLink.href = videoUrl;
+    dlLink.download = `wishcraft-viral-reel-${Date.now()}.${ext}`;
+    modal.classList.add('active');
+    
+    // Play the video inside preview automatically
+    video.play().catch(e => console.log("Auto-preview play blocked/failed", e));
+  }
+}
+
+// Hide success modal
+function hideVideoExportSuccessModal() {
+  const modal = document.getElementById('videoSuccessModal');
+  const video = document.getElementById('successModalVideo');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+  if (video) {
+    video.pause();
+    video.src = '';
+  }
+}
+
+// Show screen recording warning modal
+function showMobileScreenRecordWarning() {
+  const modal = document.getElementById('mobileRecordWarningModal');
+  if (modal) {
+    modal.classList.add('active');
+  }
+}
+
+// Hide screen recording warning modal
+function hideMobileScreenRecordWarning() {
+  const modal = document.getElementById('mobileRecordWarningModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
 // 6. HIGH-RESOLUTION CANVAS VIDEO GENERATOR (MEDIARECORDER ENGINE)
 function compileAndExportWebM() {
   // Pause simulator if playing
@@ -3168,13 +3261,11 @@ function compileAndExportWebM() {
   // Setup Capture Stream at 30 FPS
   const stream = canvas.captureStream(30);
 
-  // Define recorder codecs fallback
-  let options = { mimeType: 'video/webm;codecs=vp9,opus' };
-  if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-    options = { mimeType: 'video/webm;codecs=vp8,opus' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      options = { mimeType: 'video/webm' };
-    }
+  // Define recorder codecs fallback dynamically
+  const format = getSupportedVideoFormat();
+  let options = {};
+  if (format.mime) {
+    options.mimeType = format.mime;
   }
 
   let recorder;
@@ -3191,21 +3282,20 @@ function compileAndExportWebM() {
   };
 
   recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
+    const recordedMime = format.mime || recorder.mimeType || 'video/webm';
+    const ext = format.ext || (recordedMime.includes('mp4') ? 'mp4' : 'webm');
+
+    const blob = new Blob(chunks, { type: recordedMime });
     const url = URL.createObjectURL(blob);
 
-    // Auto Download WebM video
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `wishcraft-viral-reel-${Date.now()}.webm`;
-    link.click();
+    // Show preview and manual download modal to prevent async popups blocks
+    showVideoExportSuccessModal(url, ext);
 
     // Clear UI
     videoExportProgressContainer.style.display = 'none';
     videoExportStatus.style.display = 'none';
     exportVideoBtn.disabled = false;
-    exportVideoBtn.textContent = '🎬 Generate & Export WebM Video';
-    alert("Congratulations! Your high-res POV viral reel has been successfully generated and downloaded! 🚀");
+    exportVideoBtn.textContent = '🎬 Generate & Export Video';
   };
 
   // Start recording buffer
@@ -3241,6 +3331,11 @@ function toggleScreenRecording() {
   if (screenRecorder && screenRecorder.state !== 'inactive') {
     stopScreenRecording();
   } else {
+    // Check if browser supports screen recording APIs (not supported on mobile devices)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      showMobileScreenRecordWarning();
+      return;
+    }
     const activeBtn = document.activeElement &&
       (document.activeElement.id === 'studioRecordBtn' || document.activeElement.id === 'tabRecordBtn')
       ? document.activeElement
@@ -3301,13 +3396,11 @@ async function startScreenRecording(btnElement) {
     const audioTracks = screenStream.getAudioTracks();
     audioTracks.forEach(track => recordStream.addTrack(track));
 
-    // 6. Setup MediaRecorder with codecs fallback
-    let options = { mimeType: 'video/webm;codecs=vp9,opus' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      options = { mimeType: 'video/webm;codecs=vp8,opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'video/webm' };
-      }
+    // 6. Setup MediaRecorder dynamically with fallback codecs
+    const format = getSupportedVideoFormat();
+    let options = {};
+    if (format.mime) {
+      options.mimeType = format.mime;
     }
 
     screenRecorder = new MediaRecorder(recordStream, options);
@@ -3323,14 +3416,14 @@ async function startScreenRecording(btnElement) {
 
       if (screenChunks.length === 0) return;
 
-      const blob = new Blob(screenChunks, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `wishcraft-mobile-layout-${Date.now()}.webm`;
-      link.click();
+      const recordedMime = format.mime || screenRecorder.mimeType || 'video/webm';
+      const ext = format.ext || (recordedMime.includes('mp4') ? 'mp4' : 'webm');
 
-      alert("Success! The recording of the mobile layout has been downloaded! 🎬");
+      const blob = new Blob(screenChunks, { type: recordedMime });
+      const url = URL.createObjectURL(blob);
+
+      // Show preview and manual download modal instead of direct blocked download
+      showVideoExportSuccessModal(url, ext);
     };
 
     // If the user clicks "Stop sharing" in the browser's banner

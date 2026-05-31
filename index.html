@@ -782,6 +782,61 @@
     </div>
   </div>
 
+  <!-- Video Export Success Modal -->
+  <div id="videoSuccessModal" class="custom-modal">
+    <div class="custom-modal-content">
+      <span class="close-modal-btn" id="closeVideoModalBtn">&times;</span>
+      <h3 class="modal-title">✨ Video Ready! ✨</h3>
+      <p class="modal-subtitle">Your high-resolution POV viral reel has been successfully generated.</p>
+      
+      <div class="modal-video-container">
+        <video id="successModalVideo" controls playsinline loop></video>
+      </div>
+
+      <div class="modal-actions">
+        <a id="downloadVideoLink" href="#" download class="sim-btn primary" style="text-decoration: none; justify-content: center; display: inline-flex; align-items: center; width: 100%; padding: 12px; font-weight: 700; height: auto;">
+          📥 Download Video
+        </a>
+      </div>
+
+      <div class="mobile-tip-box">
+        💡 <b>Mobile User Tip:</b> If the download button does not start the download, long-press the video player above and tap <b>"Save Video"</b> or <b>"Add to Photos"</b> to save it directly.
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Screen Recording Warning Modal -->
+  <div id="mobileRecordWarningModal" class="custom-modal">
+    <div class="custom-modal-content warning">
+      <span class="close-modal-btn" id="closeWarningModalBtn">&times;</span>
+      <h3 class="modal-title" style="color: #f87171;">⚠️ Mobile Screen Recording Limits</h3>
+      <p class="modal-subtitle" style="font-size: 0.75rem; line-height: 1.5; color: var(--text-muted);">
+        Mobile web browsers do not support direct tab or screen capture due to system security and OS limitations.
+      </p>
+      
+      <div class="warning-solutions">
+        <div class="solution-item">
+          <span class="solution-num">1</span>
+          <div>
+            <strong>Use Canvas Video Exporter</strong>
+            <p>Use the "Client-Side Video Exporter" in the Exporter tab. It runs purely in code and works great on mobile!</p>
+          </div>
+        </div>
+        <div class="solution-item" style="margin-top: 12px;">
+          <span class="solution-num">2</span>
+          <div>
+            <strong>Use Phone's Native Screen Recorder</strong>
+            <p>Activate your phone's built-in Screen Recorder (iOS Control Center or Android Quick Panel) and hit Play in our simulator.</p>
+          </div>
+        </div>
+      </div>
+
+      <button id="closeWarningModalActionBtn" class="sim-btn" style="width: 100%; justify-content: center; margin-top: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);">
+        Got it
+      </button>
+    </div>
+  </div>
+
   <!-- Main script -->
   <script src="app.js"></script>
 </body>
