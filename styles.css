@@ -488,6 +488,25 @@ body {
   border: 1px solid rgba(255,255,255,0.15);
 }
 
+/* Instagram story ring on header avatar */
+.platform-instagram .chat-avatar-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: storyRingRotate 4s linear infinite;
+}
+
+@keyframes storyRingRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .active-dot {
   position: absolute;
   bottom: 0;
@@ -518,6 +537,20 @@ body {
 .chat-status {
   font-size: 0.6rem;
   color: #00d46a;
+}
+
+/* Instagram DM: username is white bold, status is grey */
+.platform-instagram .chat-username {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.01em;
+}
+
+.platform-instagram .chat-status {
+  font-size: 0.58rem !important;
+  color: #a5a5a5 !important;
+  font-weight: 400;
 }
 
 /* Seen receipt row — inline inside chat feed */
@@ -762,6 +795,40 @@ body {
   color: #fff;
   align-self: flex-end;
   border-bottom-right-radius: 4px;
+}
+
+/* Instagram: fully round bubbles, no tails */
+.platform-instagram .chat-bubble.left {
+  background: #262626 !important;
+  color: #ffffff !important;
+  border-radius: 22px !important;
+  font-size: 0.8rem !important;
+  cursor: pointer;
+}
+
+.platform-instagram .chat-bubble.right {
+  background: linear-gradient(135deg, #3897f0 0%, #9b59b6 60%, #e1306c 100%) !important;
+  color: #ffffff !important;
+  border-radius: 22px !important;
+  font-size: 0.8rem !important;
+  cursor: pointer;
+}
+
+/* Heart reaction popup on long press/double tap */
+.bubble-heart-reaction {
+  position: absolute;
+  bottom: -14px;
+  right: 6px;
+  font-size: 0.9rem;
+  animation: heartPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes heartPop {
+  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 /* Scene 2: Magical WishCraft Website Reveal */
@@ -1234,49 +1301,82 @@ select.input-field option {
 
 .bubble-row {
   display: flex;
-  gap: 6px;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 8px;
-  padding: 6px;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
 }
 
 .bubble-row-text {
-  flex-grow: 1;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-size: 0.75rem;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  color: #fff !important;
+  font-size: 0.78rem !important;
+  box-sizing: border-box !important;
 }
 
 .bubble-row-text:focus {
   outline: none;
+  border-color: rgba(139, 92, 246, 0.5) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.bubble-row-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+
+.bubble-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .bubble-btn {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px;
+  font-size: 0.7rem;
+  padding: 5px 8px;
   color: var(--text-muted);
-  border-radius: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  transition: var(--transition-smooth);
 }
 
-.bubble-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+.bubble-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #fff;
+}
+
+.bubble-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
 }
 
 .bubble-btn.active-left {
   color: #fff;
-  background: #3f3f46;
+  background: rgba(63, 63, 70, 0.5);
+  border-color: rgba(63, 63, 70, 0.8);
 }
 
 .bubble-btn.active-right {
   color: #fff;
-  background: var(--primary);
+  background: rgba(139, 92, 246, 0.25);
+  border-color: rgba(139, 92, 246, 0.5);
 }
 
 .add-bubble-btn {
@@ -1563,26 +1663,51 @@ select.input-field option {
 }
 .platform-instagram .chat-header {
   background: #000000 !important;
-  border-bottom: 1px solid #262626 !important;
+  border-bottom: 0.5px solid #1a1a1a !important;
   top: 34px !important;
+  padding: 8px 12px !important;
 }
 .platform-instagram .chat-bubble.left {
   background: #262626 !important;
   color: #fff !important;
+  border-radius: 22px !important;
 }
 .platform-instagram .chat-bubble.right {
-  background: linear-gradient(135deg, #3797f0 0%, #9634fa 50%, #e62387 100%) !important;
+  background: linear-gradient(135deg, #3897f0 0%, #9b59b6 60%, #e1306c 100%) !important;
   color: #fff !important;
+  border-radius: 22px !important;
 }
 .platform-instagram .insta-message-box {
-  background: #262626 !important;
-  border: none !important;
-  height: 40px !important;
-  padding: 0 16px !important;
+  background: #1a1a1a !important;
+  border: 1px solid #2a2a2a !important;
+  height: 44px !important;
+  padding: 0 12px !important;
+  border-radius: 22px !important;
 }
 .platform-instagram .insta-input-icons svg {
   color: #ffffff !important;
   opacity: 1 !important;
+}
+
+/* Instagram: heart icon button at right of input */
+.platform-instagram .insta-heart-btn {
+  display: flex !important;
+}
+.insta-heart-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  margin-left: 6px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.insta-heart-btn:hover {
+  transform: scale(1.15);
+}
+.insta-heart-btn:active {
+  transform: scale(0.9);
 }
 
 /* Chat Back Button Styling */
@@ -1899,10 +2024,12 @@ select.input-field option {
 /* Instagram Styles */
 .platform-instagram .insta-input-container {
   display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .insta-camera-btn {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   background: #0095f6;
   color: #ffffff;
   border-radius: 50%;
@@ -1910,24 +2037,28 @@ select.input-field option {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-right: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0,149,246,0.35);
+  transition: transform 0.2s;
+}
+.insta-camera-btn:hover {
+  transform: scale(1.08);
 }
 .insta-message-box {
   flex-grow: 1;
   background: #1c1c1e;
-  border: 1px solid #343434;
-  border-radius: 24px;
-  height: 38px;
-  padding: 0 14px;
+  border: 1px solid #2a2a2a;
+  border-radius: 22px;
+  height: 40px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
+  gap: 6px;
 }
 .insta-placeholder {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: #a5a5a5;
   font-weight: 400;
   flex: 1;
@@ -1935,24 +2066,33 @@ select.input-field option {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: 8px;
   text-align: left;
+  background: transparent;
+  border: none;
+  outline: none;
+  caret-color: #ffffff;
+}
+.insta-placeholder::placeholder {
+  color: #a5a5a5;
+  font-size: 0.78rem;
 }
 .insta-input-icons {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   color: #ffffff;
+  flex-shrink: 0;
 }
 .insta-input-icons svg {
   cursor: pointer;
   opacity: 0.9;
   transition: transform 0.2s;
-  color: #a5a5a5;
+  color: #ffffff;
+  flex-shrink: 0;
 }
 .insta-input-icons svg:hover {
-  transform: scale(1.1);
-  color: #ffffff;
+  transform: scale(1.15);
+  opacity: 1;
 }
 
 /* iMessage Styles */
@@ -2181,36 +2321,330 @@ select.input-field option {
   opacity: 0.65;
 }
 
+/* Drawer Grab Handle & Close Button Styles */
+.drawer-handle {
+  display: none;
+}
+.drawer-close-btn {
+  display: none;
+}
+
 /* Mobile responsive layout fixes */
 @media (max-width: 900px) {
+  :root {
+    --phone-scale: 0.45;
+    --phone-scale-fullscreen: 0.72;
+  }
+
   .app-container {
-    grid-template-columns: 1fr !important;
-    height: auto !important;
-    overflow-y: visible !important;
-    padding: 10px !important;
-    gap: 15px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    gap: 0 !important;
   }
   
   .app-header {
-    grid-column: span 1 !important;
-    grid-row: 1;
-    margin-bottom: 5px;
+    display: none !important; /* Hide app header completely on mobile to maximize viewport height */
   }
 
   .simulator-stage {
-    grid-row: 2;
-    padding: 15px 0 !important;
+    height: 38vh !important;
+    min-height: 250px !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    background: #06040b !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
-  .ideas-sidebar {
-    grid-row: 3;
-    height: auto !important;
-    max-height: 480px;
+  /* Expand simulator stage on mobile when workspace drawer is closed */
+  .app-container:not(.workspace-open) .simulator-stage {
+    height: calc(100vh - 64px) !important;
+    height: calc(100dvh - 64px) !important;
   }
 
-  .controls-sidebar {
-    grid-row: 4;
-    height: auto !important;
+  .phone-outer {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    width: var(--phone-width) !important;
+    height: var(--phone-height) !important;
+    background: transparent !important;
+    position: absolute !important;
+    margin: 0 !important;
+    transform: scale(var(--phone-scale)) !important;
+    transform-origin: center center !important;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  /* Scale up simulator in fullscreen/theater mode */
+  .app-container:not(.workspace-open) .phone-outer {
+    transform: scale(var(--phone-scale-fullscreen)) !important;
+  }
+  
+  .phone-screen {
+    border-radius: 20px !important;
+    border: 1.5px solid rgba(139, 92, 246, 0.25) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  /* Hide physical phone bezels, button shadows, status bar indicators, home bar, and glare */
+  .phone-notch, .phone-button, .phone-glare, .phone-status-bar, .home-indicator {
+    display: none !important;
+  }
+
+  /* Relocate chat header to top since phone status bar is gone */
+  .chat-header {
+    top: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  /* Hide messy speed slider on mobile */
+  .speed-control-row {
+    display: none !important;
+  }
+
+  /* Compact 4-column Segmented Controls Grid inside simulator stage */
+  .sim-controls-bar {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: var(--phone-width) !important;
+    position: absolute !important;
+    bottom: 8px !important;
+    padding: 0 10px !important;
+    margin: 0 !important;
+    z-index: 100 !important;
+  }
+
+  .sim-controls-bar .sim-btn {
+    padding: 10px 0 !important;
+    font-size: 0.75rem !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Format button content (icons only) for small columns on mobile */
+  #playPauseBtn { font-size: 0 !important; }
+  #playPauseBtn span { font-size: 0.78rem !important; }
+
+  #restartBtn { font-size: 0 !important; }
+  #restartBtn span { font-size: 0.78rem !important; }
+
+  #toggleOverlayBtn { font-size: 0 !important; }
+  #toggleOverlayBtn span { font-size: 0.78rem !important; }
+
+  #cinematicZoomBtn { font-size: 0 !important; }
+  #cinematicZoomBtn span { font-size: 0.78rem !important; }
+
+  #openRecordStudioBtn {
+    display: none !important; /* Hide Rec Studio button from simulator screen */
+  }
+
+  .drawer-handle {
+    display: block;
+    width: 44px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 99px;
+    margin: -5px auto 14px auto;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .drawer-handle:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scaleY(1.2);
+  }
+
+  /* Slide-up Bottom Sheets (Drawers) for Sidebars - refactored to fit split layout */
+  .ideas-sidebar, .controls-sidebar {
+    position: fixed !important;
+    top: 38vh !important;
+    left: 0 !important;
+    bottom: auto !important;
+    width: 100vw !important;
+    height: calc(62vh - 64px) !important;
+    max-height: none !important;
+    z-index: 1000 !important;
+    background: rgba(10, 5, 20, 0.98) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    border: none !important;
+    border-top: 1px solid rgba(139, 92, 246, 0.25) !important;
+    border-radius: 20px 20px 0 0 !important;
+    transform: translateY(100%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease !important;
+    padding: 15px !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5) !important;
+    overflow-y: auto !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .ideas-sidebar.active, .controls-sidebar.active {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .drawer-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.25rem;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 100;
+    transition: background 0.2s, transform 0.2s;
+  }
+
+  .drawer-close-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+  }
+
+  .panel-header {
+    position: relative;
+    padding-right: 40px; /* Space for close button */
+  }
+
+  body {
+    padding-bottom: 64px !important;
+    overflow: hidden !important;
+  }
+
+  /* Make sure tab header button text stays on a single line without overlapping or wrapping messily */
+  .tab-btn {
+    font-size: 0.68rem !important;
+    padding: 6px 4px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Disable blocking and blur overlay on mobile viewports */
+  .drawer-overlay {
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+  }
+
+  /* Mobile Bottom Navigation Bar Styles */
+  .mobile-nav-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 64px;
+    background: rgba(10, 5, 20, 0.95);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 9999;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-nav-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.65rem;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+    flex: 1;
+    padding: 8px 4px;
+    min-width: 0;
+    font-family: var(--font-display);
+    letter-spacing: 0.1px;
+  }
+
+  .mobile-nav-btn span:first-child {
+    font-size: 1.15rem;
+  }
+
+  .mobile-nav-btn:hover, .mobile-nav-btn:active, .mobile-nav-btn.active {
+    color: var(--primary);
+    transform: scale(1.05);
+  }
+
+  /* Center "Edit Bubbles" nav button — purple accent */
+  .mobile-nav-btn--highlight {
+    color: #c084fc;
+    position: relative;
+  }
+  .mobile-nav-btn--highlight span:first-child {
+    font-size: 1.3rem;
+  }
+  .mobile-nav-btn--highlight:hover,
+  .mobile-nav-btn--highlight:active,
+  .mobile-nav-btn--highlight.active {
+    color: #a855f7;
+  }
+
+  /* Live bubble count badge on nav button */
+  .mobile-nav-bubble-count {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 22px);
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 800;
+    border-radius: 99px;
+    padding: 1px 5px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.5;
+    pointer-events: none;
+    font-family: var(--font-sans);
+  }
+
+  /* Prevent auto-zoom and layout shifting on mobile browsers when focusing inputs */
+  .bubble-row-text, .input-field, select.input-field, select {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 900px) and (min-height: 700px) {
+  :root {
+    --phone-scale: 0.52;
+    --phone-scale-fullscreen: 0.82;
+  }
+}
+
+@media (max-width: 900px) and (min-height: 800px) {
+  :root {
+    --phone-scale: 0.58;
+    --phone-scale-fullscreen: 0.9;
   }
 }
 
@@ -2425,6 +2859,16 @@ select.input-field option {
   color: #000000 !important;
 }
 
+/* Light mode: heart button */
+.phone-outer.theme-light .platform-instagram .insta-heart-btn svg {
+  color: #000000 !important;
+}
+
+/* Light mode: story ring still shows (slightly muted) */
+.phone-outer.theme-light .platform-instagram .chat-avatar-wrapper::before {
+  opacity: 0.9;
+}
+
 /* Home Indicator & Status Bar (since they are parent-level children of .phone-outer) */
 .phone-outer.theme-light.platform-instagram .phone-status-bar {
   color: #000000 !important;
@@ -2434,153 +2878,317 @@ select.input-field option {
   background: rgba(0, 0, 0, 0.85) !important;
 }
 
-/* Custom Premium Modals */
-.custom-modal {
+/* Floating heart animation for bubble double-tap reaction */
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-30px) scale(1.3); opacity: 0; }
+}
+
+/* ==========================================================================
+   BUBBLE EDITOR DRAWER (Bottom Sheet)
+   ========================================================================== */
+
+/* Trigger button in sidebar */
+.open-bubble-drawer-btn {
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(236,72,153,0.12) 100%);
+  border: 1px solid rgba(139,92,246,0.35);
+  border-radius: 12px;
+  color: #c084fc;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+.open-bubble-drawer-btn:hover {
+  background: linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(236,72,153,0.2) 100%);
+  border-color: rgba(139,92,246,0.6);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(139,92,246,0.2);
+}
+.open-bubble-drawer-btn:active {
+  transform: translateY(0);
+}
+
+/* Desktop: show sidebar button. Mobile: hide it (nav bar has the trigger) */
+.desktop-only-btn {
+  display: flex;
+}
+@media (max-width: 900px) {
+  .desktop-only-btn {
+    display: none !important;
+  }
+}
+
+.bubble-count-badge {
+  background: rgba(139,92,246,0.6);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+  font-family: var(--font-sans);
+}
+
+/* Backdrop */
+.bubble-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4, 2, 8, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  z-index: 100000;
-  display: none; /* Controlled by JS */
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: modalFadeIn 0.3s ease forwards;
-}
-
-.custom-modal.active {
-  display: flex;
-}
-
-.custom-modal-content {
-  background: rgba(18, 12, 33, 0.95);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: 24px;
-  max-width: 440px;
-  width: 100%;
-  padding: 24px;
-  position: relative;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(139, 92, 246, 0.2);
-  transform: translateY(20px);
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
   opacity: 0;
-  animation: modalSlideUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.bubble-drawer-backdrop.open {
+  opacity: 1;
+  pointer-events: all;
 }
 
-@keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modalSlideUp {
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.close-modal-btn {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  font-size: 1.8rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: var(--transition-smooth);
-  user-select: none;
-}
-
-.close-modal-btn:hover {
-  color: #fff;
-}
-
-.modal-title {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 800;
-  text-align: center;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #ffffff, #c084fc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.modal-subtitle {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-align: center;
-  margin-bottom: 16px;
-  line-height: 1.4;
-}
-
-.modal-video-container {
-  width: 100%;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #000;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 20px;
+/* Drawer panel */
+.bubble-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+  background: #0f0a1e;
+  border-top: 1px solid rgba(139,92,246,0.25);
+  border-radius: 24px 24px 0 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  aspect-ratio: 9 / 16;
-  max-height: 280px;
+  flex-direction: column;
+  max-height: 92vh;
+  transform: translateY(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -20px 60px rgba(0,0,0,0.6), 0 -4px 24px rgba(139,92,246,0.1);
+}
+.bubble-drawer.open {
+  transform: translateY(0);
 }
 
-.modal-video-container video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+/* Drag handle */
+.bubble-drawer-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 10px auto 6px;
+  cursor: grab;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.bubble-drawer-handle:hover {
+  background: rgba(255,255,255,0.3);
 }
 
-.mobile-tip-box {
-  background: rgba(139, 92, 246, 0.08);
-  border: 1px dashed rgba(139, 92, 246, 0.3);
-  padding: 12px;
-  border-radius: 12px;
-  font-size: 0.68rem;
-  color: #c084fc;
-  line-height: 1.5;
-  margin-top: 16px;
-}
-
-/* Warning modal specific styles */
-.warning-solutions {
-  text-align: left;
-  margin: 15px 0;
-}
-
-.solution-item {
-  display: flex;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 12px;
-  border-radius: 12px;
-}
-
-.solution-num {
-  width: 22px;
-  height: 22px;
-  background: var(--primary);
-  color: #fff;
-  border-radius: 50%;
+/* Drawer header */
+.bubble-drawer-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.72rem;
+  justify-content: space-between;
+  padding: 4px 16px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   flex-shrink: 0;
 }
+.bubble-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+.bubble-drawer-badge {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 2px 8px;
+  min-width: 22px;
+  text-align: center;
+  font-family: var(--font-sans);
+}
+.bubble-drawer-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #a1a1aa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bubble-drawer-close:hover {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.3);
+  color: #f87171;
+}
+.drawer-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.drawer-add-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+.drawer-add-btn:active {
+  transform: scale(0.97);
+}
 
-.solution-item strong {
+/* Templates strip */
+.bubble-drawer-templates {
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+}
+.drawer-section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
   display: block;
+  margin-bottom: 6px;
+}
+.drawer-templates-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.drawer-templates-row::-webkit-scrollbar { display: none; }
+.drawer-template-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #e4e4e7;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s;
+  font-family: var(--font-display);
+}
+.drawer-template-chip:hover, .drawer-template-chip:active {
+  background: rgba(139,92,246,0.2);
+  border-color: rgba(139,92,246,0.45);
+  color: #c084fc;
+}
+
+/* AI section */
+.bubble-drawer-ai {
+  padding: 10px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+}
+.drawer-ai-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.drawer-ai-input {
+  flex: 1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 8px;
+  padding: 7px 10px;
   font-size: 0.75rem;
   color: #fff;
-  margin-bottom: 4px;
+  font-family: var(--font-sans);
+  outline: none;
+  min-width: 0;
+  -webkit-appearance: none;
+  font-size: 16px; /* prevent iOS zoom */
+}
+.drawer-ai-input::placeholder { color: #52525b; }
+.drawer-ai-input:focus {
+  border-color: rgba(139,92,246,0.5);
+  background: rgba(0,0,0,0.4);
+}
+.drawer-ai-btn {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  background: linear-gradient(135deg, #8b5cf6, #db2777);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.drawer-ai-btn:hover { opacity: 0.88; }
+.drawer-ai-btn:active { opacity: 0.75; }
+
+/* Scrollable bubbles body */
+.bubble-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 16px;
+  overscroll-behavior: contain;
+}
+.bubble-drawer-body::-webkit-scrollbar { width: 4px; }
+.bubble-drawer-body::-webkit-scrollbar-track { background: transparent; }
+.bubble-drawer-body::-webkit-scrollbar-thumb {
+  background: rgba(139,92,246,0.3);
+  border-radius: 2px;
 }
 
-.solution-item p {
-  font-size: 0.68rem;
-  color: var(--text-muted);
+/* Footer with Add Bubble */
+.bubble-drawer-footer {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  /* Safe area inset for iOS home bar */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+
+/* Make bubble rows look nicer inside the drawer */
+.bubble-drawer-body .bubble-row {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.bubble-drawer-body .bubble-row:hover {
+  border-color: rgba(139,92,246,0.3);
+  background: rgba(139,92,246,0.04);
+}
+.bubble-drawer-body .bubble-row-text {
+  font-size: 0.82rem !important;
+  padding: 10px 12px !important;
   line-height: 1.4;
 }
-
-

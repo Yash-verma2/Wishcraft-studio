@@ -318,7 +318,57 @@ window.addEventListener('DOMContentLoaded', () => {
   soundTransition.volume = 0.4;
   soundMagic.volume = 0.45;
   soundGlitch.volume = 0.3;
+
+  // Initialize mobile UI adaptations if applicable
+  initializeMobileAdaptations();
 });
+
+// Adaptation helper to adjust UI text/styles on mobile devices
+function initializeMobileAdaptations() {
+  if (isMobileDevice()) {
+    // 1. Update tabRecordBtn text and description
+    const tabRecordBtn = document.getElementById('tabRecordBtn');
+    if (tabRecordBtn) {
+      tabRecordBtn.innerHTML = `⚠️ Unsupported on Mobile (Tap for alternatives)`;
+      tabRecordBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+      tabRecordBtn.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      tabRecordBtn.style.color = '#f87171';
+    }
+
+    const tabRecordDesc = tabRecordBtn ? tabRecordBtn.previousElementSibling : null;
+    if (tabRecordDesc && tabRecordDesc.classList.contains('export-desc')) {
+      tabRecordDesc.innerHTML = `<span style="color: #f87171; font-weight: 600;">⚠️ Tab Recording Unsupported.</span> Mobile browsers do not support tab-level sharing. Please use the <b>Client-Side Video Exporter</b> (Option 3) above.`;
+    }
+
+    // 2. Update studioRecordBtn in Fullscreen Modal
+    const studioRecordBtn = document.getElementById('studioRecordBtn');
+    if (studioRecordBtn) {
+      studioRecordBtn.innerHTML = `⚠️ Unsupported on Mobile (Tap for alternatives)`;
+      studioRecordBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+      studioRecordBtn.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      studioRecordBtn.style.color = '#f87171';
+    }
+  }
+
+  // Check if Canvas Stream or MediaRecorder is completely unsupported (e.g. in-app browsers)
+  if (typeof HTMLCanvasElement.prototype.captureStream === 'undefined' || typeof MediaRecorder === 'undefined') {
+    const exportVideoBtn = document.getElementById('exportVideoBtn');
+    if (exportVideoBtn) {
+      exportVideoBtn.innerHTML = `⚠️ Exporter Unsupported (Tap for info)`;
+      exportVideoBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+      exportVideoBtn.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      exportVideoBtn.style.color = '#f87171';
+    }
+  }
+}
+
+// Helper to detect if user is on a mobile device or if display capture is unsupported
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+         (window.innerWidth <= 800 && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) ||
+         !navigator.mediaDevices || 
+         !navigator.mediaDevices.getDisplayMedia;
+}
 
 // Update Phone Simulator Clock
 function updateClock() {
@@ -409,6 +459,11 @@ function loadIdeaIntoStudio() {
 
   // Auto switch to Chat editor tab
   switchTab('chat');
+
+  // Auto-close drawer on mobile so simulator playback starts distraction-free
+  if (typeof window.closeAllDrawers === 'function') {
+    window.closeAllDrawers();
+  }
 }
 
 // Apply activeConfig data to HTML UI Elements (inputs, select options, overlay text)
@@ -463,12 +518,28 @@ function renderChatBubblesEditor() {
     const row = document.createElement('div');
     row.className = 'bubble-row';
     row.innerHTML = `
-      <button class="bubble-btn ${bubble.side === 'left' ? 'active-left' : ''}" title="Align Left (Sender)" onclick="toggleBubbleSide(${index}, 'left')">⬅️</button>
-      <button class="bubble-btn ${bubble.side === 'right' ? 'active-right' : ''}" title="Align Right (Me)" onclick="toggleBubbleSide(${index}, 'right')">➡️</button>
-      <button class="bubble-btn" title="Move Up" onclick="moveBubble(${index}, 'up')" ${index === 0 ? 'disabled style="opacity: 0.3;"' : ''}>⬆️</button>
-      <button class="bubble-btn" title="Move Down" onclick="moveBubble(${index}, 'down')" ${index === activeConfig.chatBubbles.length - 1 ? 'disabled style="opacity: 0.3;"' : ''}>⬇️</button>
-      <input type="text" class="bubble-row-text" value="${escapeHtml(bubble.text)}" oninput="updateBubbleText(${index}, this.value)">
-      <button class="bubble-btn" title="Delete Bubble" onclick="deleteBubble(${index})" style="color:var(--secondary);">❌</button>
+      <input type="text" class="bubble-row-text" value="${escapeHtml(bubble.text)}" placeholder="Type bubble text..." oninput="updateBubbleText(${index}, this.value)">
+      <div class="bubble-row-toolbar">
+        <div class="bubble-toolbar-group">
+          <button class="bubble-btn ${bubble.side === 'left' ? 'active-left' : ''}" title="Align Left (Sender)" onclick="toggleBubbleSide(${index}, 'left')">
+            💬 Left
+          </button>
+          <button class="bubble-btn ${bubble.side === 'right' ? 'active-right' : ''}" title="Align Right (Me)" onclick="toggleBubbleSide(${index}, 'right')">
+            Me Right 💬
+          </button>
+        </div>
+        <div class="bubble-toolbar-group">
+          <button class="bubble-btn" title="Move Up" onclick="moveBubble(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>
+            ⬆️
+          </button>
+          <button class="bubble-btn" title="Move Down" onclick="moveBubble(${index}, 'down')" ${index === activeConfig.chatBubbles.length - 1 ? 'disabled' : ''}>
+            ⬇️
+          </button>
+          <button class="bubble-btn" title="Delete Bubble" onclick="deleteBubble(${index})" style="color: #f87171; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
     `;
     chatBubblesStackEl.appendChild(row);
   });
@@ -1113,32 +1184,6 @@ function setupEventHandlers() {
     tabRecordBtn.addEventListener('click', toggleScreenRecording);
   }
 
-  // Custom Modal close events
-  const closeVideoModalBtn = document.getElementById('closeVideoModalBtn');
-  if (closeVideoModalBtn) {
-    closeVideoModalBtn.addEventListener('click', hideVideoExportSuccessModal);
-  }
-  const closeWarningModalBtn = document.getElementById('closeWarningModalBtn');
-  if (closeWarningModalBtn) {
-    closeWarningModalBtn.addEventListener('click', hideMobileScreenRecordWarning);
-  }
-  const closeWarningModalActionBtn = document.getElementById('closeWarningModalActionBtn');
-  if (closeWarningModalActionBtn) {
-    closeWarningModalActionBtn.addEventListener('click', hideMobileScreenRecordWarning);
-  }
-
-  // Close modals when clicking outside contents
-  window.addEventListener('click', (e) => {
-    const videoModal = document.getElementById('videoSuccessModal');
-    const warningModal = document.getElementById('mobileRecordWarningModal');
-    if (e.target === videoModal) {
-      hideVideoExportSuccessModal();
-    }
-    if (e.target === warningModal) {
-      hideMobileScreenRecordWarning();
-    }
-  });
-
   // Studio Record Mode buttons
   openRecordStudioBtn.addEventListener('click', enterStudioMode);
   studioExitBtn.addEventListener('click', exitStudioMode);
@@ -1377,12 +1422,60 @@ function setupEventHandlers() {
     });
   }
 
+
   const instaSendBtn = document.querySelector('.insta-send-btn');
   if (instaSendBtn) {
     instaSendBtn.addEventListener('click', () => {
       if (instaInput) sendManualMessage(instaInput, 'instagram');
     });
   }
+
+  // Heart button: tapping sends a ❤️ heart message
+  const instaHeartBtn = document.querySelector('.insta-heart-btn');
+  if (instaHeartBtn) {
+    instaHeartBtn.addEventListener('click', () => {
+      if (currentChatPlatform !== 'instagram') return;
+      activeConfig.chatBubbles.push({ side: 'right', text: '❤️' });
+      renderChatBubblesEditor();
+      renderChatBubblesPreview();
+      updateChatStats();
+      // Animate the heart button
+      instaHeartBtn.style.transform = 'scale(1.4)';
+      setTimeout(() => { instaHeartBtn.style.transform = ''; }, 200);
+    });
+  }
+
+  // Double-tap on Instagram bubbles to add heart reaction
+  let lastTap = 0;
+  document.addEventListener('touchend', (e) => {
+    if (currentChatPlatform !== 'instagram') return;
+    const bubble = e.target.closest('.platform-instagram .chat-bubble');
+    if (!bubble) return;
+    const now = Date.now();
+    if (now - lastTap < 350) {
+      e.preventDefault();
+      addHeartReaction(bubble);
+    }
+    lastTap = now;
+  });
+  // Also double-click for desktop
+  document.addEventListener('dblclick', (e) => {
+    if (currentChatPlatform !== 'instagram') return;
+    const bubble = e.target.closest('.platform-instagram .chat-bubble');
+    if (bubble) addHeartReaction(bubble);
+  });
+
+  function addHeartReaction(bubble) {
+    if (!bubble || bubble.querySelector('.bubble-heart-reaction')) return;
+    const heart = document.createElement('span');
+    heart.className = 'bubble-heart-reaction';
+    heart.textContent = '❤️';
+    bubble.appendChild(heart);
+    // Remove after 3s so it doesn't accumulate
+    setTimeout(() => { if (heart.parentNode) heart.remove(); }, 3000);
+  }
+
+
 
   const imessageSendBtn = document.querySelector('.imessage-send-btn');
   if (imessageSendBtn) {
@@ -1413,6 +1506,142 @@ function setupEventHandlers() {
       }
     });
   }
+
+  // Mobile navigation and bottom sheets controls
+  const mobileNavIdeasBtn = document.getElementById('mobileNavIdeasBtn');
+  const mobileNavCustomizerBtn = document.getElementById('mobileNavCustomizerBtn');
+  const closeIdeasDrawerBtn = document.getElementById('closeIdeasDrawerBtn');
+  const closeControlsDrawerBtn = document.getElementById('closeControlsDrawerBtn');
+  const drawerOverlay = document.getElementById('drawerOverlay');
+
+  const ideasSidebar = document.querySelector('.ideas-sidebar');
+  const controlsSidebar = document.querySelector('.controls-sidebar');
+
+  function openDrawer(type) {
+    if (!ideasSidebar || !controlsSidebar) return;
+    
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) appContainer.classList.add('workspace-open');
+
+    if (type === 'ideas') {
+      ideasSidebar.classList.add('active');
+      controlsSidebar.classList.remove('active');
+      if (mobileNavIdeasBtn) mobileNavIdeasBtn.classList.add('active');
+      if (mobileNavCustomizerBtn) mobileNavCustomizerBtn.classList.remove('active');
+    } else if (type === 'controls') {
+      controlsSidebar.classList.add('active');
+      ideasSidebar.classList.remove('active');
+      if (mobileNavCustomizerBtn) mobileNavCustomizerBtn.classList.add('active');
+      if (mobileNavIdeasBtn) mobileNavIdeasBtn.classList.remove('active');
+    }
+  }
+
+  window.closeAllDrawers = function() {
+    const appContainer = document.querySelector('.app-container');
+    if (appContainer) appContainer.classList.remove('workspace-open');
+    
+    if (ideasSidebar) {
+      ideasSidebar.classList.remove('active');
+      ideasSidebar.style.transform = '';
+    }
+    if (controlsSidebar) {
+      controlsSidebar.classList.remove('active');
+      controlsSidebar.style.transform = '';
+    }
+    if (mobileNavIdeasBtn) mobileNavIdeasBtn.classList.remove('active');
+    if (mobileNavCustomizerBtn) mobileNavCustomizerBtn.classList.remove('active');
+    // Also close bubble editor drawer if open
+    const bubbleDrawerEl = document.getElementById('bubbleDrawer');
+    const bubbleBackdropEl = document.getElementById('bubbleDrawerBackdrop');
+    const bubbleNavBtn = document.getElementById('mobileNavBubblesBtn');
+    if (bubbleDrawerEl) bubbleDrawerEl.classList.remove('open');
+    if (bubbleBackdropEl) bubbleBackdropEl.classList.remove('open');
+    if (bubbleNavBtn) bubbleNavBtn.classList.remove('active');
+    document.body.style.overflow = '';
+  };
+
+  if (mobileNavIdeasBtn) {
+    mobileNavIdeasBtn.addEventListener('click', () => {
+      // Toggle if already active
+      if (ideasSidebar && ideasSidebar.classList.contains('active')) {
+        window.closeAllDrawers();
+      } else {
+        openDrawer('ideas');
+      }
+    });
+  }
+  if (mobileNavCustomizerBtn) {
+    mobileNavCustomizerBtn.addEventListener('click', () => {
+      // Toggle if already active
+      if (controlsSidebar && controlsSidebar.classList.contains('active')) {
+        window.closeAllDrawers();
+      } else {
+        openDrawer('controls');
+      }
+    });
+  }
+  if (closeIdeasDrawerBtn) {
+    closeIdeasDrawerBtn.addEventListener('click', window.closeAllDrawers);
+  }
+  if (closeControlsDrawerBtn) {
+    closeControlsDrawerBtn.addEventListener('click', window.closeAllDrawers);
+  }
+  if (drawerOverlay) {
+    drawerOverlay.addEventListener('click', window.closeAllDrawers);
+  }
+
+  // Swipe-to-dismiss gesture for drawers
+  function makeDrawerSwipeable(drawerEl) {
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    drawerEl.addEventListener('touchstart', (e) => {
+      // Only drag if scrolled to the top of the drawer to allow regular internal scrolling
+      if (drawerEl.scrollTop > 0) return;
+      
+      startY = e.touches[0].clientY;
+      isDragging = true;
+      drawerEl.style.transition = 'none'; // Disable transition during drag
+    }, { passive: true });
+
+    drawerEl.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      currentY = e.touches[0].clientY;
+      const deltaY = currentY - startY;
+
+      if (deltaY > 0) {
+        // Drag drawer down visually
+        drawerEl.style.transform = `translateY(${deltaY}px)`;
+        // Slightly fade drawer opacity based on drag percentage to feel native
+        const opacity = Math.max(0.4, 1 - (deltaY / (window.innerHeight * 0.75)));
+        drawerEl.style.opacity = opacity;
+      }
+    }, { passive: true });
+
+    drawerEl.addEventListener('touchend', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      drawerEl.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+      
+      const deltaY = currentY - startY;
+      drawerEl.style.opacity = '';
+
+      if (deltaY > 100) {
+        // Dragged down far enough -> close drawer
+        drawerEl.style.transform = '';
+        window.closeAllDrawers();
+      } else {
+        // Snap back to top
+        drawerEl.style.transform = 'translateY(0)';
+      }
+      startY = 0;
+      currentY = 0;
+    });
+  }
+
+  if (ideasSidebar) makeDrawerSwipeable(ideasSidebar);
+  if (controlsSidebar) makeDrawerSwipeable(controlsSidebar);
 }
 
 // Scrape OG Image and Title from url via CORS proxy
@@ -3173,77 +3402,16 @@ function startStudioPlayback() {
   }
 }
 
-// Dynamic format negotiator for WebM vs MP4 (iOS fallback)
-function getSupportedVideoFormat() {
-  const formats = [
-    { mime: 'video/mp4;codecs=h264,aac', ext: 'mp4' },
-    { mime: 'video/mp4;codecs=h264', ext: 'mp4' },
-    { mime: 'video/mp4', ext: 'mp4' },
-    { mime: 'video/webm;codecs=vp9,opus', ext: 'webm' },
-    { mime: 'video/webm;codecs=vp8,opus', ext: 'webm' },
-    { mime: 'video/webm', ext: 'webm' }
-  ];
-  if (typeof MediaRecorder === 'undefined') {
-    return { mime: '', ext: 'webm' };
-  }
-  for (const format of formats) {
-    if (typeof MediaRecorder.isTypeSupported === 'function' && MediaRecorder.isTypeSupported(format.mime)) {
-      return format;
-    }
-  }
-  return { mime: '', ext: 'webm' }; // default fallback
-}
-
-// Show the premium video preview & download modal
-function showVideoExportSuccessModal(videoUrl, ext) {
-  const modal = document.getElementById('videoSuccessModal');
-  const video = document.getElementById('successModalVideo');
-  const dlLink = document.getElementById('downloadVideoLink');
-  
-  if (modal && video && dlLink) {
-    video.src = videoUrl;
-    dlLink.href = videoUrl;
-    dlLink.download = `wishcraft-viral-reel-${Date.now()}.${ext}`;
-    modal.classList.add('active');
-    
-    // Play the video inside preview automatically
-    video.play().catch(e => console.log("Auto-preview play blocked/failed", e));
-  }
-}
-
-// Hide success modal
-function hideVideoExportSuccessModal() {
-  const modal = document.getElementById('videoSuccessModal');
-  const video = document.getElementById('successModalVideo');
-  if (modal) {
-    modal.classList.remove('active');
-  }
-  if (video) {
-    video.pause();
-    video.src = '';
-  }
-}
-
-// Show screen recording warning modal
-function showMobileScreenRecordWarning() {
-  const modal = document.getElementById('mobileRecordWarningModal');
-  if (modal) {
-    modal.classList.add('active');
-  }
-}
-
-// Hide screen recording warning modal
-function hideMobileScreenRecordWarning() {
-  const modal = document.getElementById('mobileRecordWarningModal');
-  if (modal) {
-    modal.classList.remove('active');
-  }
-}
-
 // 6. HIGH-RESOLUTION CANVAS VIDEO GENERATOR (MEDIARECORDER ENGINE)
 function compileAndExportWebM() {
   // Pause simulator if playing
   pauseTimeline();
+
+  // Check if browser has required API support
+  if (typeof HTMLCanvasElement.prototype.captureStream === 'undefined' || typeof MediaRecorder === 'undefined') {
+    showExportUnsupportedNotice();
+    return;
+  }
 
   // UI Display
   videoExportProgressContainer.style.display = 'block';
@@ -3258,22 +3426,32 @@ function compileAndExportWebM() {
   canvas.height = 1920;
   const ctx = canvas.getContext('2d');
 
-  // Setup Capture Stream at 30 FPS
-  const stream = canvas.captureStream(30);
-
-  // Define recorder codecs fallback dynamically
-  const format = getSupportedVideoFormat();
-  let options = {};
-  if (format.mime) {
-    options.mimeType = format.mime;
+  let stream;
+  try {
+    // Setup Capture Stream at 30 FPS
+    stream = canvas.captureStream(30);
+  } catch (err) {
+    console.error("Canvas captureStream failed", err);
+    cleanupExportUI();
+    showExportUnsupportedNotice();
+    return;
   }
 
+  // Define recorder codecs fallback dynamically
+  const options = getSupportedVideoOptions();
   let recorder;
   try {
     recorder = new MediaRecorder(stream, options);
   } catch (e) {
     console.error("MediaRecorder creation error, falling back", e);
-    recorder = new MediaRecorder(stream);
+    try {
+      recorder = new MediaRecorder(stream);
+    } catch (e2) {
+      console.error("MediaRecorder fallback also failed", e2);
+      cleanupExportUI();
+      showExportUnsupportedNotice();
+      return;
+    }
   }
 
   const chunks = [];
@@ -3282,20 +3460,21 @@ function compileAndExportWebM() {
   };
 
   recorder.onstop = () => {
-    const recordedMime = format.mime || recorder.mimeType || 'video/webm';
-    const ext = format.ext || (recordedMime.includes('mp4') ? 'mp4' : 'webm');
-
-    const blob = new Blob(chunks, { type: recordedMime });
+    const finalMime = recorder.mimeType || options.mimeType || 'video/webm';
+    const blob = new Blob(chunks, { type: finalMime });
     const url = URL.createObjectURL(blob);
 
-    // Show preview and manual download modal to prevent async popups blocks
-    showVideoExportSuccessModal(url, ext);
+    // Auto Download video with correct extension depending on codec resolved
+    const link = document.createElement('a');
+    link.href = url;
+    const isMp4 = finalMime.toLowerCase().includes('mp4') || finalMime.toLowerCase().includes('quicktime');
+    const ext = isMp4 ? 'mp4' : 'webm';
+    link.download = `wishcraft-viral-reel-${Date.now()}.${ext}`;
+    link.click();
 
     // Clear UI
-    videoExportProgressContainer.style.display = 'none';
-    videoExportStatus.style.display = 'none';
-    exportVideoBtn.disabled = false;
-    exportVideoBtn.textContent = '🎬 Generate & Export Video';
+    cleanupExportUI();
+    alert("Congratulations! Your high-res POV viral reel has been successfully generated and downloaded! 🚀");
   };
 
   // Start recording buffer
@@ -3326,16 +3505,194 @@ function compileAndExportWebM() {
   }, 33); // ~30 fps compilation loop
 }
 
+// Helper to negotiate best video recording codec options
+function getSupportedVideoOptions() {
+  const types = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+    'video/mp4;codecs=h264,aac',
+    'video/mp4',
+    'video/quicktime'
+  ];
+  for (const type of types) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(type)) {
+      return { mimeType: type };
+    }
+  }
+  return {};
+}
+
+// Display custom notice for mobile devices where tab recording is unsupported
+function showMobileRecordingNotice() {
+  // Check if modal already exists
+  let modal = document.getElementById('mobileRecordModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    return;
+  }
+
+  // Create beautiful glassmorphic modal
+  modal = document.createElement('div');
+  modal.id = 'mobileRecordModal';
+  modal.style.position = 'fixed';
+  modal.style.inset = '0';
+  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+  modal.style.backdropFilter = 'blur(12px)';
+  modal.style.webkitBackdropFilter = 'blur(12px)';
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
+  modal.style.zIndex = '999999';
+  modal.style.padding = '20px';
+  modal.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+  const content = document.createElement('div');
+  content.style.background = 'linear-gradient(135deg, rgba(30, 20, 50, 0.95) 0%, rgba(15, 10, 30, 0.98) 100%)';
+  content.style.border = '1px solid rgba(139, 92, 246, 0.35)';
+  content.style.borderRadius = '20px';
+  content.style.padding = '28px';
+  content.style.maxWidth = '420px';
+  content.style.width = '100%';
+  content.style.color = '#ffffff';
+  content.style.boxShadow = '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 35px rgba(139, 92, 246, 0.2)';
+  content.style.textAlign = 'center';
+
+  content.innerHTML = `
+    <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5));">📱</div>
+    <h3 style="font-size: 1.25rem; font-weight: 700; color: #c084fc; margin-bottom: 12px; margin-top: 0; font-family: var(--font-display), sans-serif; letter-spacing: 0.5px;">Mobile Recording Notice</h3>
+    <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin-bottom: 20px; text-align: left;">
+      Tab-level screen capture is not supported by mobile web browsers. To record your simulated POV video, please use one of these alternatives:
+    </p>
+    <div style="text-align: left; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 14px; margin-bottom: 24px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.9); line-height: 1.5; display: flex; flex-direction: column; gap: 12px;">
+      <div>
+        <span style="font-weight: 700; color: #a78bfa; display: block; margin-bottom: 2px;">🎬 Option A: Client-Side Video Exporter</span>
+        Use the green <b>Generate & Export WebM/MP4 Video</b> button under the <i>Exporter</i> tab to compile the canvas frames directly in your browser.
+      </div>
+      <div>
+        <span style="font-weight: 700; color: #db2777; display: block; margin-bottom: 2px;">📹 Option B: Native Screen Recorder</span>
+        Open <b>Rec Studio</b>, start the simulation countdown, and record your screen using your phone's built-in iOS/Android screen recorder.
+      </div>
+    </div>
+    <button id="closeMobileRecordModal" style="background: linear-gradient(135deg, #8b5cf6 0%, #db2777 100%); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: transform 0.2s; width: 100%; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
+      Got it!
+    </button>
+  `;
+
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+
+  // Close modal behavior
+  document.getElementById('closeMobileRecordModal').addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  // Also close if clicked outside content
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+}
+
+// Display custom notice when the browser does not support canvas video export (e.g. In-App Webviews)
+function showExportUnsupportedNotice() {
+  // Check if modal already exists
+  let modal = document.getElementById('mobileRecordModal');
+  if (modal) {
+    // If it's already in DOM, update content to show the unsupported message
+    const title = modal.querySelector('h3');
+    if (title) title.textContent = "Exporter Not Supported";
+    const desc = modal.querySelector('p');
+    if (desc) desc.textContent = "Your current mobile browser wrapper does not support client-side video compilation. To generate and download your viral reels, please use one of these solutions:";
+    modal.style.display = 'flex';
+    return;
+  }
+
+  // Create beautiful glassmorphic modal
+  modal = document.createElement('div');
+  modal.id = 'mobileRecordModal';
+  modal.style.position = 'fixed';
+  modal.style.inset = '0';
+  modal.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+  modal.style.backdropFilter = 'blur(12px)';
+  modal.style.webkitBackdropFilter = 'blur(12px)';
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
+  modal.style.zIndex = '999999';
+  modal.style.padding = '20px';
+  modal.style.fontFamily = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+  const content = document.createElement('div');
+  content.style.background = 'linear-gradient(135deg, rgba(30, 20, 50, 0.95) 0%, rgba(15, 10, 30, 0.98) 100%)';
+  content.style.border = '1px solid rgba(139, 92, 246, 0.35)';
+  content.style.borderRadius = '20px';
+  content.style.padding = '28px';
+  content.style.maxWidth = '420px';
+  content.style.width = '100%';
+  content.style.color = '#ffffff';
+  content.style.boxShadow = '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 35px rgba(139, 92, 246, 0.2)';
+  content.style.textAlign = 'center';
+
+  content.innerHTML = `
+    <div style="font-size: 3rem; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5));">⚠️</div>
+    <h3 style="font-size: 1.25rem; font-weight: 700; color: #c084fc; margin-bottom: 12px; margin-top: 0; font-family: var(--font-display), sans-serif; letter-spacing: 0.5px;">Exporter Not Supported</h3>
+    <p style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); line-height: 1.6; margin-bottom: 20px; text-align: left;">
+      Your current browser wrapper does not support HTML5 video compilation. To record and export your simulated video, try the following solutions:
+    </p>
+    <div style="text-align: left; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 14px; margin-bottom: 24px; font-size: 0.78rem; color: rgba(255, 255, 255, 0.9); line-height: 1.5; display: flex; flex-direction: column; gap: 12px;">
+      <div>
+        <span style="font-weight: 700; color: #a78bfa; display: block; margin-bottom: 2px;">🌐 Solution 1: Use a Default Mobile Browser</span>
+        If you are inside an <b>in-app browser</b> (like Instagram DM, Facebook, or TikTok bio link), copy the page URL and open it in your phone's default browser (<b>Safari</b> on iOS, <b>Chrome</b> on Android). In-app webviews block canvas recording and file downloads.
+      </div>
+      <div>
+        <span style="font-weight: 700; color: #db2777; display: block; margin-bottom: 2px;">📹 Solution 2: Native Screen Recording</span>
+        Go to **Rec Studio**, tap **Start Count & Play**, and capture the animation using your mobile's built-in OS screen recorder.
+      </div>
+      <div>
+        <span style="font-weight: 700; color: #fbbf24; display: block; margin-bottom: 2px;">💻 Solution 3: Use a Desktop Device</span>
+        Open this page on a desktop computer. Desktop browsers fully support all recording and downloading tools.
+      </div>
+    </div>
+    <button id="closeMobileRecordModal" style="background: linear-gradient(135deg, #8b5cf6 0%, #db2777 100%); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: transform 0.2s; width: 100%; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">
+      Got it!
+    </button>
+  `;
+
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+
+  // Close modal behavior
+  document.getElementById('closeMobileRecordModal').addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  // Also close if clicked outside content
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+}
+
+function cleanupExportUI() {
+  videoExportProgressContainer.style.display = 'none';
+  videoExportStatus.style.display = 'none';
+  exportVideoBtn.disabled = false;
+  exportVideoBtn.textContent = '🎬 Generate & Export Video';
+}
+
 // --- LIVE TAB SCREEN RECORDER ENGINE ---
 function toggleScreenRecording() {
+  if (isMobileDevice()) {
+    showMobileRecordingNotice();
+    return;
+  }
+
   if (screenRecorder && screenRecorder.state !== 'inactive') {
     stopScreenRecording();
   } else {
-    // Check if browser supports screen recording APIs (not supported on mobile devices)
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-      showMobileScreenRecordWarning();
-      return;
-    }
     const activeBtn = document.activeElement &&
       (document.activeElement.id === 'studioRecordBtn' || document.activeElement.id === 'tabRecordBtn')
       ? document.activeElement
@@ -3396,12 +3753,8 @@ async function startScreenRecording(btnElement) {
     const audioTracks = screenStream.getAudioTracks();
     audioTracks.forEach(track => recordStream.addTrack(track));
 
-    // 6. Setup MediaRecorder dynamically with fallback codecs
-    const format = getSupportedVideoFormat();
-    let options = {};
-    if (format.mime) {
-      options.mimeType = format.mime;
-    }
+    // 6. Setup MediaRecorder with codecs fallback dynamically
+    const options = getSupportedVideoOptions();
 
     screenRecorder = new MediaRecorder(recordStream, options);
 
@@ -3416,14 +3769,17 @@ async function startScreenRecording(btnElement) {
 
       if (screenChunks.length === 0) return;
 
-      const recordedMime = format.mime || screenRecorder.mimeType || 'video/webm';
-      const ext = format.ext || (recordedMime.includes('mp4') ? 'mp4' : 'webm');
-
-      const blob = new Blob(screenChunks, { type: recordedMime });
+      const finalMime = screenRecorder.mimeType || options.mimeType || 'video/webm';
+      const blob = new Blob(screenChunks, { type: finalMime });
       const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const isMp4 = finalMime.toLowerCase().includes('mp4') || finalMime.toLowerCase().includes('quicktime');
+      const ext = isMp4 ? 'mp4' : 'webm';
+      link.download = `wishcraft-mobile-layout-${Date.now()}.${ext}`;
+      link.click();
 
-      // Show preview and manual download modal instead of direct blocked download
-      showVideoExportSuccessModal(url, ext);
+      alert("Success! The recording of the mobile layout has been downloaded! 🎬");
     };
 
     // If the user clicks "Stop sharing" in the browser's banner
@@ -4437,6 +4793,172 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
     }
   });
 }
+
+/* ==========================================================================
+   BUBBLE EDITOR DRAWER
+   ========================================================================== */
+(function initBubbleDrawer() {
+  const drawer        = document.getElementById('bubbleDrawer');
+  const backdrop      = document.getElementById('bubbleDrawerBackdrop');
+  const navOpenBtn    = document.getElementById('mobileNavBubblesBtn');   // primary trigger
+  const legacyOpenBtn = document.getElementById('openBubbleDrawerBtn');   // desktop fallback
+  const closeBtn      = document.getElementById('closeBubbleDrawerBtn');
+  const drawerAddBtn  = document.getElementById('drawerAddBubbleBtn');
+  const drawerBadge   = document.getElementById('bubbleDrawerBadge');
+  const navBubbleCount = document.getElementById('mobileNavBubbleCount');
+  const sidebarBadge  = document.getElementById('bubbleDrawerCount');
+  const drawerAiPrompt = document.getElementById('drawerAiPrompt');
+  const drawerAiBtn    = document.getElementById('drawerAiGenerateBtn');
+  const drawerAiStatus = document.getElementById('drawerAiStatus');
+  const templateChips  = document.querySelectorAll('.drawer-template-chip');
+
+  if (!drawer) return;
+
+  // --- Open / Close ---
+  function openBubbleDrawer() {
+    // Close sidebars first (don't overlay on top of each other)
+    if (typeof window.closeAllDrawers === 'function') {
+      // Close sidebar drawers without affecting the bubble drawer state
+      const appContainer = document.querySelector('.app-container');
+      if (appContainer) appContainer.classList.remove('workspace-open');
+      const ideas = document.querySelector('.ideas-sidebar');
+      const controls = document.querySelector('.controls-sidebar');
+      if (ideas) ideas.classList.remove('active');
+      if (controls) controls.classList.remove('active');
+      const ideasBtn = document.getElementById('mobileNavIdeasBtn');
+      const ctrlBtn  = document.getElementById('mobileNavCustomizerBtn');
+      if (ideasBtn) ideasBtn.classList.remove('active');
+      if (ctrlBtn)  ctrlBtn.classList.remove('active');
+    }
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (navOpenBtn) navOpenBtn.classList.add('active');
+  }
+  function closeBubbleDrawer() {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    document.body.style.overflow = '';
+    if (navOpenBtn) navOpenBtn.classList.remove('active');
+  }
+
+  if (navOpenBtn)    navOpenBtn.addEventListener('click', openBubbleDrawer);
+  if (legacyOpenBtn) legacyOpenBtn.addEventListener('click', openBubbleDrawer);
+  if (closeBtn)  closeBtn.addEventListener('click', closeBubbleDrawer);
+  if (backdrop)  backdrop.addEventListener('click', closeBubbleDrawer);
+
+  // --- Swipe-down handle to dismiss ---
+  const handle = document.getElementById('bubbleDrawerHandle');
+  if (handle) {
+    let touchStartY = 0;
+    handle.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      drawer.style.transition = 'none';
+    }, { passive: true });
+    handle.addEventListener('touchmove', (e) => {
+      const dy = e.touches[0].clientY - touchStartY;
+      if (dy > 0) drawer.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    handle.addEventListener('touchend', (e) => {
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      drawer.style.transition = '';
+      drawer.style.transform = '';
+      if (dy > 80) closeBubbleDrawer();
+    });
+  }
+
+  // --- Badge count sync ---
+  function syncBadges() {
+    const count = (activeConfig && activeConfig.chatBubbles) ? activeConfig.chatBubbles.length : 0;
+    if (drawerBadge)    drawerBadge.textContent = count;
+    if (sidebarBadge)   sidebarBadge.textContent = count;
+    if (navBubbleCount) navBubbleCount.textContent = count;
+  }
+  // Patch updateChatStats to also sync badges
+  const _origUpdateStats = window.updateChatStats;
+  if (typeof _origUpdateStats === 'function') {
+    window.updateChatStats = function() {
+      _origUpdateStats.apply(this, arguments);
+      syncBadges();
+    };
+  }
+  setTimeout(syncBadges, 300);
+
+  // --- Add bubble button in drawer header ---
+  if (drawerAddBtn) {
+    drawerAddBtn.addEventListener('click', () => {
+      addCustomBubble();
+      const body = drawer.querySelector('.bubble-drawer-body');
+      if (body) setTimeout(() => { body.scrollTop = body.scrollHeight; }, 60);
+    });
+  }
+
+  // --- Template chips ---
+  templateChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const tpl = chip.dataset.tpl;
+      const template = quickChatTemplates[tpl];
+      if (!template) return;
+      activeConfig.chatBubbles = JSON.parse(JSON.stringify(template));
+      applyConfigToUI();
+      stopTimeline();
+      resetReelSimulator();
+      syncBadges();
+      chip.style.background = 'rgba(139,92,246,0.4)';
+      setTimeout(() => { chip.style.background = ''; }, 400);
+    });
+  });
+
+  // --- Drawer AI Generator ---
+  if (drawerAiBtn && drawerAiPrompt) {
+    const runDrawerAI = async () => {
+      const scenario = drawerAiPrompt.value.trim();
+      if (!scenario) {
+        drawerAiPrompt.focus();
+        drawerAiPrompt.style.borderColor = '#f87171';
+        setTimeout(() => { drawerAiPrompt.style.borderColor = ''; }, 1200);
+        return;
+      }
+      const orig = drawerAiBtn.innerHTML;
+      drawerAiBtn.disabled = true;
+      drawerAiBtn.innerHTML = '⏳';
+      if (drawerAiStatus) drawerAiStatus.style.display = 'block';
+      try {
+        const chatPrompt = `You are the WishCraft Dialogue Writer. Return a realistic text chat conversation of 3 to 5 bubbles about "${scenario}" in strict JSON format. 
+One of the bubbles near the end must contain a wishcraft.app link (e.g. wishcraft.app/some-name).
+You must output a JSON array of objects, where each object has these EXACT keys:
+- side: "left" (sender) or "right" (me/receiver)
+- text: String (the message bubble content)
+Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
+        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(chatPrompt));
+        if (!response.ok) throw new Error('API failed');
+        let text = await response.text();
+        if (text.includes('```')) text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const generated = JSON.parse(text);
+        if (Array.isArray(generated)) {
+          activeConfig.chatBubbles = generated;
+          renderChatBubblesEditor();
+          renderChatBubblesPreview();
+          updateChatStats();
+          stopTimeline();
+          resetReelSimulator();
+          if (drawerAiStatus) drawerAiStatus.innerHTML = `<span style="color:#10b981;font-weight:700;">✅ Done!</span>`;
+          const body = drawer.querySelector('.bubble-drawer-body');
+          if (body) setTimeout(() => { body.scrollTop = body.scrollHeight; }, 80);
+        } else { throw new Error('Invalid format'); }
+      } catch (err) {
+        console.error(err);
+        if (drawerAiStatus) drawerAiStatus.innerHTML = `<span style="color:#f87171;font-weight:700;">❌ Try again</span>`;
+      } finally {
+        drawerAiBtn.disabled = false;
+        drawerAiBtn.innerHTML = orig;
+        setTimeout(() => { if (drawerAiStatus) drawerAiStatus.style.display = 'none'; }, 3000);
+      }
+    };
+    drawerAiBtn.addEventListener('click', runDrawerAI);
+    drawerAiPrompt.addEventListener('keydown', (e) => { if (e.key === 'Enter') runDrawerAI(); });
+  }
+})();
 
 /* Cinematic Auto-Zoom and Focus Camera Engine */
 function updateCinematicZoom() {

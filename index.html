@@ -30,10 +30,12 @@
 
     <!-- Column 1: AI Daily Reel Ideas Agent -->
     <aside class="panel ideas-sidebar">
+      <div class="drawer-handle"></div>
       <div class="panel-header">
         <h2 class="panel-title"><span>🔮</span> Daily Viral Ideas</h2>
         <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Handcrafted High-Viral-Potential
           templates optimized for WishCraft growth.</p>
+        <button class="drawer-close-btn" id="closeIdeasDrawerBtn">&times;</button>
       </div>
       <div class="panel-body">
         <!-- Autonomous AI Generator Section -->
@@ -128,16 +130,13 @@
                 </div>
                 <!-- Call and Video Call Icons -->
                 <div class="chat-header-actions">
-                  <svg class="chat-header-icon" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
-                    </path>
+                  <!-- Audio call -->
+                  <svg class="chat-header-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
                   </svg>
-                  <svg class="chat-header-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M23 7l-7 5 7 5V7z"></path>
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                  <!-- Video call -->
+                  <svg class="chat-header-icon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
                   </svg>
                 </div>
               </div>
@@ -153,40 +152,37 @@
               <div class="chat-input-area" id="chatInputArea">
                 <!-- Instagram DM Input Mockup -->
                 <div class="insta-input-container">
-                  <div class="insta-camera-btn">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
-                      stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
-                      </path>
-                      <circle cx="12" cy="13" r="4"></circle>
+                  <div class="insta-camera-btn" title="Camera">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/>
+                      <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
                     </svg>
                   </div>
                   <div class="insta-message-box">
-                    <input type="text" class="insta-placeholder" placeholder="Message...">
+                    <input type="text" class="insta-placeholder" placeholder="Message..." autocomplete="off" autocorrect="off" autocapitalize="sentences" spellcheck="false">
                     <div class="insta-input-icons">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                      <!-- Mic icon -->
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
                       </svg>
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
+                      <!-- Image/Gallery icon -->
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                       </svg>
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                      <!-- Sticker/emoji icon -->
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
                       </svg>
                     </div>
                     <!-- Send button hidden by default -->
                     <div class="insta-send-btn"
-                      style="display: none; color: #0095f6; font-weight: 700; font-size: 0.78rem; cursor: pointer; padding-left: 8px;">
-                      Send</div>
+                      style="display: none; color: #3897f0; font-weight: 700; font-size: 0.82rem; cursor: pointer; padding-left: 6px; white-space: nowrap;">Send</div>
+                  </div>
+                  <!-- Heart button outside the pill -->
+                  <div class="insta-heart-btn" title="Send Heart">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
                   </div>
                 </div>
 
@@ -411,7 +407,7 @@
       </div>
 
       <!-- Speed Control Row -->
-      <div style="display:flex; align-items:center; gap:10px; margin-top:10px; padding:0 4px;">
+      <div class="speed-control-row" style="display:flex; align-items:center; gap:10px; margin-top:10px; padding:0 4px;">
         <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">🐢 Slow</span>
         <input type="range" id="speedSlider" min="80" max="400" value="200" step="20"
           style="flex:1; accent-color:var(--primary); cursor:pointer; height:4px;">
@@ -423,8 +419,10 @@
 
     <!-- Column 3: Control & Customization Dashboard -->
     <section class="panel controls-sidebar">
+      <div class="drawer-handle"></div>
       <div class="panel-header">
         <h2 class="panel-title"><span>🛠️</span> Studio Customizer</h2>
+        <button class="drawer-close-btn" id="closeControlsDrawerBtn">&times;</button>
 
         <!-- Global Platform & UI Selectors -->
         <div class="global-selectors-grid"
@@ -537,7 +535,7 @@
           </div>
 
           <div class="input-group" style="margin-top: 5px;">
-            <label class="input-label">Chat Messages Stack (Double click bubble to edit text)</label>
+            <!-- Chat Stats Bar (kept for live stats) -->
             <div class="chat-stats-bar" id="chatStatsBar">
               <span class="chat-stat" id="statBubbles" title="Number of chat bubbles">💬 <strong>0</strong> bubbles</span>
               <span class="chat-stat-divider">·</span>
@@ -547,13 +545,14 @@
               <span class="chat-stat-divider">·</span>
               <span class="chat-stat" id="statReadTime" title="Estimated reading time on screen">⏱️ ~<strong>0s</strong> read</span>
             </div>
-            <div class="chat-bubbles-stack" id="chatBubblesStack">
-              <!-- Chat stack list generated by JS -->
-            </div>
-            <button id="addBubbleBtn" class="add-bubble-btn" style="margin-top: 8px;">
-              ➕ Add Custom Chat Bubble
+            <!-- Desktop trigger (hidden on mobile — use nav bar button instead) -->
+            <button id="openBubbleDrawerBtn" class="open-bubble-drawer-btn desktop-only-btn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              Edit Chat Bubbles
+              <span id="bubbleDrawerCount" class="bubble-count-badge">0</span>
             </button>
           </div>
+
         </div>
 
         <!-- TAB 2: LINK PREVIEW EDITOR -->
@@ -710,6 +709,23 @@
 
   </div>
 
+  <!-- Drawer Backdrop Overlay -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <div class="mobile-nav-bar" id="mobileNavBar">
+    <button class="mobile-nav-btn" id="mobileNavIdeasBtn">
+      <span>🔮</span> Concepts
+    </button>
+    <button class="mobile-nav-btn mobile-nav-btn--highlight" id="mobileNavBubblesBtn">
+      <span>💬</span> Edit Bubbles
+      <span class="mobile-nav-bubble-count" id="mobileNavBubbleCount">0</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobileNavCustomizerBtn">
+      <span>🛠️</span> Edit Reel
+    </button>
+  </div>
+
   <!-- Audio elements for simulation -->
   <audio id="soundKeyboard" src="https://assets.mixkit.co/active_storage/sfx/2813/2813-84.wav" preload="auto"></audio>
   <audio id="soundTransition" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-84.wav" preload="auto"></audio>
@@ -782,57 +798,65 @@
     </div>
   </div>
 
-  <!-- Video Export Success Modal -->
-  <div id="videoSuccessModal" class="custom-modal">
-    <div class="custom-modal-content">
-      <span class="close-modal-btn" id="closeVideoModalBtn">&times;</span>
-      <h3 class="modal-title">✨ Video Ready! ✨</h3>
-      <p class="modal-subtitle">Your high-resolution POV viral reel has been successfully generated.</p>
-      
-      <div class="modal-video-container">
-        <video id="successModalVideo" controls playsinline loop></video>
+  <!-- =====================================================
+       BUBBLE EDITOR DRAWER (Bottom Sheet)
+       ===================================================== -->
+  <div class="bubble-drawer-backdrop" id="bubbleDrawerBackdrop"></div>
+  <div class="bubble-drawer" id="bubbleDrawer" role="dialog" aria-label="Chat Bubble Editor">
+    <!-- Drag handle -->
+    <div class="bubble-drawer-handle" id="bubbleDrawerHandle"></div>
+    <!-- Header -->
+    <div class="bubble-drawer-header">
+      <div class="bubble-drawer-title">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        Chat Bubble Editor
+        <span class="bubble-drawer-badge" id="bubbleDrawerBadge">0</span>
       </div>
-
-      <div class="modal-actions">
-        <a id="downloadVideoLink" href="#" download class="sim-btn primary" style="text-decoration: none; justify-content: center; display: inline-flex; align-items: center; width: 100%; padding: 12px; font-weight: 700; height: auto;">
-          📥 Download Video
-        </a>
-      </div>
-
-      <div class="mobile-tip-box">
-        💡 <b>Mobile User Tip:</b> If the download button does not start the download, long-press the video player above and tap <b>"Save Video"</b> or <b>"Add to Photos"</b> to save it directly.
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="drawerAddBubbleBtn" class="drawer-add-btn" title="Add New Bubble">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add
+        </button>
+        <button class="bubble-drawer-close" id="closeBubbleDrawerBtn" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
     </div>
-  </div>
 
-  <!-- Mobile Screen Recording Warning Modal -->
-  <div id="mobileRecordWarningModal" class="custom-modal">
-    <div class="custom-modal-content warning">
-      <span class="close-modal-btn" id="closeWarningModalBtn">&times;</span>
-      <h3 class="modal-title" style="color: #f87171;">⚠️ Mobile Screen Recording Limits</h3>
-      <p class="modal-subtitle" style="font-size: 0.75rem; line-height: 1.5; color: var(--text-muted);">
-        Mobile web browsers do not support direct tab or screen capture due to system security and OS limitations.
-      </p>
-      
-      <div class="warning-solutions">
-        <div class="solution-item">
-          <span class="solution-num">1</span>
-          <div>
-            <strong>Use Canvas Video Exporter</strong>
-            <p>Use the "Client-Side Video Exporter" in the Exporter tab. It runs purely in code and works great on mobile!</p>
-          </div>
-        </div>
-        <div class="solution-item" style="margin-top: 12px;">
-          <span class="solution-num">2</span>
-          <div>
-            <strong>Use Phone's Native Screen Recorder</strong>
-            <p>Activate your phone's built-in Screen Recorder (iOS Control Center or Android Quick Panel) and hit Play in our simulator.</p>
-          </div>
-        </div>
+    <!-- Quick Templates row -->
+    <div class="bubble-drawer-templates">
+      <span class="drawer-section-label">⚡ Quick Templates</span>
+      <div class="drawer-templates-row">
+        <button class="drawer-template-chip" data-tpl="romantic">❤️ Romantic</button>
+        <button class="drawer-template-chip" data-tpl="birthday">🎂 Birthday</button>
+        <button class="drawer-template-chip" data-tpl="funny">😂 Funny</button>
+        <button class="drawer-template-chip" data-tpl="prank">💀 Prank</button>
       </div>
+    </div>
 
-      <button id="closeWarningModalActionBtn" class="sim-btn" style="width: 100%; justify-content: center; margin-top: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);">
-        Got it
+    <!-- AI Chat Script generator -->
+    <div class="bubble-drawer-ai">
+      <span class="drawer-section-label" style="color: #c084fc;">🤖 AI Chat Generator</span>
+      <div class="drawer-ai-row">
+        <input type="text" id="drawerAiPrompt" class="drawer-ai-input" placeholder="e.g. sister apologizing for borrowing clothes">
+        <button id="drawerAiGenerateBtn" class="drawer-ai-btn">🪄 Write</button>
+      </div>
+      <div id="drawerAiStatus" style="display:none; font-size: 0.62rem; color: #a78bfa; text-align:center; padding: 4px 0; font-family: monospace;">
+        <span class="pulse-text">⏳ Writing your chat...</span>
+      </div>
+    </div>
+
+    <!-- Bubbles list -->
+    <div class="bubble-drawer-body">
+      <div class="chat-bubbles-stack" id="chatBubblesStack" style="max-height: none; border: none; background: transparent; padding: 0;">
+        <!-- Chat stack list generated by JS -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bubble-drawer-footer">
+      <button id="addBubbleBtn" class="add-bubble-btn" style="width:100%; margin:0;">
+        ➕ Add Chat Bubble
       </button>
     </div>
   </div>
@@ -840,5 +864,6 @@
   <!-- Main script -->
   <script src="app.js"></script>
 </body>
+
 
 </html>
