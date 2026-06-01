@@ -2737,9 +2737,24 @@ select.input-field option {
     border-radius: 18px 18px 0 0 !important;
   }
 
-  /* Hide messy speed slider on mobile */
+  /* Premium styled speed slider on mobile positioned right above controls */
   .speed-control-row {
-    display: none !important;
+    display: flex !important;
+    position: absolute !important;
+    bottom: 50px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: var(--phone-width) !important;
+    padding: 6px 12px !important;
+    margin: 0 !important;
+    z-index: 100 !important;
+    background: rgba(10, 5, 20, 0.55) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
   }
 
   /* Compact 4-column Segmented Controls Grid inside simulator stage */
