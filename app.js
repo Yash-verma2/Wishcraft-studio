@@ -364,10 +364,10 @@ function initializeMobileAdaptations() {
 
 // Helper to detect if user is on a mobile device or if display capture is unsupported
 function isMobileDevice() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-         (window.innerWidth <= 800 && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) ||
-         !navigator.mediaDevices || 
-         !navigator.mediaDevices.getDisplayMedia;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 800 && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) ||
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getDisplayMedia;
 }
 
 // Update Phone Simulator Clock
@@ -511,37 +511,40 @@ function applyConfigToUI() {
   copyCaptionTextEl.textContent = activeConfig.caption;
 }
 
-// Render the editable chat bubbles stack in the sidebar panel
+// Render the editable chat bubbles stack in the sidebar panel and mobile drawer
 function renderChatBubblesEditor() {
-  chatBubblesStackEl.innerHTML = '';
-  activeConfig.chatBubbles.forEach((bubble, index) => {
-    const row = document.createElement('div');
-    row.className = 'bubble-row';
-    row.innerHTML = `
-      <input type="text" class="bubble-row-text" value="${escapeHtml(bubble.text)}" placeholder="Type bubble text..." oninput="updateBubbleText(${index}, this.value)">
-      <div class="bubble-row-toolbar">
-        <div class="bubble-toolbar-group">
-          <button class="bubble-btn ${bubble.side === 'left' ? 'active-left' : ''}" title="Align Left (Sender)" onclick="toggleBubbleSide(${index}, 'left')">
-            💬 Left
-          </button>
-          <button class="bubble-btn ${bubble.side === 'right' ? 'active-right' : ''}" title="Align Right (Me)" onclick="toggleBubbleSide(${index}, 'right')">
-            Me Right 💬
-          </button>
+  const stacks = document.querySelectorAll('.chat-bubbles-stack');
+  stacks.forEach(stack => {
+    stack.innerHTML = '';
+    activeConfig.chatBubbles.forEach((bubble, index) => {
+      const row = document.createElement('div');
+      row.className = 'bubble-row';
+      row.innerHTML = `
+        <input type="text" class="bubble-row-text" value="${escapeHtml(bubble.text)}" placeholder="Type bubble text..." oninput="updateBubbleText(${index}, this.value)">
+        <div class="bubble-row-toolbar">
+          <div class="bubble-toolbar-group">
+            <button class="bubble-btn ${bubble.side === 'left' ? 'active-left' : ''}" title="Align Left (Sender)" onclick="toggleBubbleSide(${index}, 'left')">
+              💬 Left
+            </button>
+            <button class="bubble-btn ${bubble.side === 'right' ? 'active-right' : ''}" title="Align Right (Me)" onclick="toggleBubbleSide(${index}, 'right')">
+              Me Right 💬
+            </button>
+          </div>
+          <div class="bubble-toolbar-group">
+            <button class="bubble-btn" title="Move Up" onclick="moveBubble(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>
+              ⬆️
+            </button>
+            <button class="bubble-btn" title="Move Down" onclick="moveBubble(${index}, 'down')" ${index === activeConfig.chatBubbles.length - 1 ? 'disabled' : ''}>
+              ⬇️
+            </button>
+            <button class="bubble-btn" title="Delete Bubble" onclick="deleteBubble(${index})" style="color: #f87171; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">
+              🗑️ Delete
+            </button>
+          </div>
         </div>
-        <div class="bubble-toolbar-group">
-          <button class="bubble-btn" title="Move Up" onclick="moveBubble(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>
-            ⬆️
-          </button>
-          <button class="bubble-btn" title="Move Down" onclick="moveBubble(${index}, 'down')" ${index === activeConfig.chatBubbles.length - 1 ? 'disabled' : ''}>
-            ⬇️
-          </button>
-          <button class="bubble-btn" title="Delete Bubble" onclick="deleteBubble(${index})" style="color: #f87171; border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">
-            🗑️ Delete
-          </button>
-        </div>
-      </div>
-    `;
-    chatBubblesStackEl.appendChild(row);
+      `;
+      stack.appendChild(row);
+    });
   });
 }
 
@@ -1430,20 +1433,7 @@ function setupEventHandlers() {
     });
   }
 
-  // Heart button: tapping sends a ❤️ heart message
-  const instaHeartBtn = document.querySelector('.insta-heart-btn');
-  if (instaHeartBtn) {
-    instaHeartBtn.addEventListener('click', () => {
-      if (currentChatPlatform !== 'instagram') return;
-      activeConfig.chatBubbles.push({ side: 'right', text: '❤️' });
-      renderChatBubblesEditor();
-      renderChatBubblesPreview();
-      updateChatStats();
-      // Animate the heart button
-      instaHeartBtn.style.transform = 'scale(1.4)';
-      setTimeout(() => { instaHeartBtn.style.transform = ''; }, 200);
-    });
-  }
+
 
   // Double-tap on Instagram bubbles to add heart reaction
   let lastTap = 0;
@@ -1519,7 +1509,7 @@ function setupEventHandlers() {
 
   function openDrawer(type) {
     if (!ideasSidebar || !controlsSidebar) return;
-    
+
     const appContainer = document.querySelector('.app-container');
     if (appContainer) appContainer.classList.add('workspace-open');
 
@@ -1536,10 +1526,10 @@ function setupEventHandlers() {
     }
   }
 
-  window.closeAllDrawers = function() {
+  window.closeAllDrawers = function () {
     const appContainer = document.querySelector('.app-container');
     if (appContainer) appContainer.classList.remove('workspace-open');
-    
+
     if (ideasSidebar) {
       ideasSidebar.classList.remove('active');
       ideasSidebar.style.transform = '';
@@ -1597,9 +1587,11 @@ function setupEventHandlers() {
     let isDragging = false;
 
     drawerEl.addEventListener('touchstart', (e) => {
-      // Only drag if scrolled to the top of the drawer to allow regular internal scrolling
-      if (drawerEl.scrollTop > 0) return;
-      
+      // Only drag if scrolled to the top of the drawer and its panel-body to allow regular internal scrolling
+      const panelBody = drawerEl.querySelector('.panel-body');
+      const scrollTop = (panelBody ? panelBody.scrollTop : 0) + drawerEl.scrollTop;
+      if (scrollTop > 0) return;
+
       startY = e.touches[0].clientY;
       isDragging = true;
       drawerEl.style.transition = 'none'; // Disable transition during drag
@@ -1623,7 +1615,7 @@ function setupEventHandlers() {
       if (!isDragging) return;
       isDragging = false;
       drawerEl.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
-      
+
       const deltaY = currentY - startY;
       drawerEl.style.opacity = '';
 
@@ -2392,7 +2384,7 @@ function tickTimeline(progress) {
   if (progress <= 50) {
     sceneChatEl.classList.add('active');
     sceneRevealEl.classList.remove('active');
-    
+
     // Hide transition overlay and reset its inline styles
     transitionOverlayEl.classList.remove('active');
     transitionOverlayEl.style.opacity = '0';
@@ -2490,7 +2482,7 @@ function tickTimeline(progress) {
   // Phase 2: Transition Overlay Phase (50% to 60% of the timeline)
   else if (progress > 50 && progress <= 60) {
     resetCinematicZoom();
-    
+
     // Determine overlay opacity based on progress (linear fade in and fade out)
     let opacity = 0;
     if (progress <= 55) {
@@ -2500,7 +2492,7 @@ function tickTimeline(progress) {
       // Fade out from 55 to 60 (1 to 0)
       opacity = (60 - progress) / 5;
     }
-    
+
     // Swap the active scenes at the peak opacity (55%)
     if (progress < 55) {
       sceneChatEl.classList.add('active');
@@ -2512,7 +2504,7 @@ function tickTimeline(progress) {
         sceneRevealEl.classList.add('active');
         if (soundEnabled && playbackState === 'playing') {
           soundMagic.currentTime = 0;
-          soundMagic.play().catch(e => {});
+          soundMagic.play().catch(e => { });
         }
         loadRealWebsiteIframe();
       }
@@ -2539,7 +2531,7 @@ function tickTimeline(progress) {
   else if (progress > 60) {
     resetCinematicZoom();
     sceneChatEl.classList.remove('active');
-    
+
     // Hide transition overlay and reset its inline styles
     transitionOverlayEl.classList.remove('active');
     transitionOverlayEl.style.opacity = '0';
@@ -4798,19 +4790,19 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
    BUBBLE EDITOR DRAWER
    ========================================================================== */
 (function initBubbleDrawer() {
-  const drawer        = document.getElementById('bubbleDrawer');
-  const backdrop      = document.getElementById('bubbleDrawerBackdrop');
-  const navOpenBtn    = document.getElementById('mobileNavBubblesBtn');   // primary trigger
+  const drawer = document.getElementById('bubbleDrawer');
+  const backdrop = document.getElementById('bubbleDrawerBackdrop');
+  const navOpenBtn = document.getElementById('mobileNavBubblesBtn');   // primary trigger
   const legacyOpenBtn = document.getElementById('openBubbleDrawerBtn');   // desktop fallback
-  const closeBtn      = document.getElementById('closeBubbleDrawerBtn');
-  const drawerAddBtn  = document.getElementById('drawerAddBubbleBtn');
-  const drawerBadge   = document.getElementById('bubbleDrawerBadge');
+  const closeBtn = document.getElementById('closeBubbleDrawerBtn');
+  const drawerAddBtn = document.getElementById('drawerAddBubbleBtn');
+  const drawerBadge = document.getElementById('bubbleDrawerBadge');
   const navBubbleCount = document.getElementById('mobileNavBubbleCount');
-  const sidebarBadge  = document.getElementById('bubbleDrawerCount');
+  const sidebarBadge = document.getElementById('bubbleDrawerCount');
   const drawerAiPrompt = document.getElementById('drawerAiPrompt');
-  const drawerAiBtn    = document.getElementById('drawerAiGenerateBtn');
+  const drawerAiBtn = document.getElementById('drawerAiGenerateBtn');
   const drawerAiStatus = document.getElementById('drawerAiStatus');
-  const templateChips  = document.querySelectorAll('.drawer-template-chip');
+  const templateChips = document.querySelectorAll('.drawer-template-chip');
 
   if (!drawer) return;
 
@@ -4826,9 +4818,9 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
       if (ideas) ideas.classList.remove('active');
       if (controls) controls.classList.remove('active');
       const ideasBtn = document.getElementById('mobileNavIdeasBtn');
-      const ctrlBtn  = document.getElementById('mobileNavCustomizerBtn');
+      const ctrlBtn = document.getElementById('mobileNavCustomizerBtn');
       if (ideasBtn) ideasBtn.classList.remove('active');
-      if (ctrlBtn)  ctrlBtn.classList.remove('active');
+      if (ctrlBtn) ctrlBtn.classList.remove('active');
     }
     drawer.classList.add('open');
     backdrop.classList.add('open');
@@ -4842,10 +4834,10 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
     if (navOpenBtn) navOpenBtn.classList.remove('active');
   }
 
-  if (navOpenBtn)    navOpenBtn.addEventListener('click', openBubbleDrawer);
+  if (navOpenBtn) navOpenBtn.addEventListener('click', openBubbleDrawer);
   if (legacyOpenBtn) legacyOpenBtn.addEventListener('click', openBubbleDrawer);
-  if (closeBtn)  closeBtn.addEventListener('click', closeBubbleDrawer);
-  if (backdrop)  backdrop.addEventListener('click', closeBubbleDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeBubbleDrawer);
+  if (backdrop) backdrop.addEventListener('click', closeBubbleDrawer);
 
   // --- Swipe-down handle to dismiss ---
   const handle = document.getElementById('bubbleDrawerHandle');
@@ -4870,14 +4862,14 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
   // --- Badge count sync ---
   function syncBadges() {
     const count = (activeConfig && activeConfig.chatBubbles) ? activeConfig.chatBubbles.length : 0;
-    if (drawerBadge)    drawerBadge.textContent = count;
-    if (sidebarBadge)   sidebarBadge.textContent = count;
+    if (drawerBadge) drawerBadge.textContent = count;
+    if (sidebarBadge) sidebarBadge.textContent = count;
     if (navBubbleCount) navBubbleCount.textContent = count;
   }
   // Patch updateChatStats to also sync badges
   const _origUpdateStats = window.updateChatStats;
   if (typeof _origUpdateStats === 'function') {
-    window.updateChatStats = function() {
+    window.updateChatStats = function () {
       _origUpdateStats.apply(this, arguments);
       syncBadges();
     };
