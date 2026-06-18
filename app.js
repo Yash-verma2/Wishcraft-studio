@@ -29,7 +29,9 @@ let lastTypedLength = 0; // Track typed characters for keypress audio triggers
 
 // Particle Engine Configuration
 let particleSpawnInterval = null;
-let iframeLoadTimer = null; // Timer to detect iframe connection timeout
+let iframeLoadTimer = null;       // Hard timeout before showing manual Retry
+let iframeSlowHintTimer = null;   // "taking longer" hint at 10s
+let iframeAutoRetryTimer = null;  // Silent auto-retry at 20s
 
 // Screen Capture Recorder State
 let screenStream = null;
@@ -580,6 +582,14 @@ function updateChatStats() {
       chatStatsBarEl.classList.remove('stats-warning');
     }
   }
+
+  // Sync bubble count badges
+  const drawerBadge = document.getElementById('bubbleDrawerBadge');
+  const sidebarBadge = document.getElementById('bubbleDrawerCount');
+  const navBubbleCount = document.getElementById('mobileNavBubbleCount');
+  if (drawerBadge) drawerBadge.textContent = bubbleCount;
+  if (sidebarBadge) sidebarBadge.textContent = bubbleCount;
+  if (navBubbleCount) navBubbleCount.textContent = bubbleCount;
 }
 
 // Move chat bubble up/down in sequence
@@ -735,10 +745,12 @@ function loadRealWebsiteIframe() {
   const errorEl = document.getElementById('realWebsiteError');
   const errorUrlEl = document.getElementById('realWebsiteErrorUrl');
   const loader = document.getElementById('realWebsiteLoader');
+  const loaderSubText = loader ? loader.querySelector('span:last-child') : null;
 
   // Helper: show loading state
   const showLoader = () => {
     if (loader) { loader.style.display = 'flex'; loader.style.opacity = '1'; }
+    if (loaderSubText) loaderSubText.textContent = 'Loading your magical experience...';
     if (errorEl) errorEl.style.display = 'none';
   };
   // Helper: hide loading state
@@ -753,6 +765,13 @@ function loadRealWebsiteIframe() {
     hideLoader();
     if (errorEl) { errorEl.style.display = 'flex'; }
     if (errorUrlEl) { errorUrlEl.textContent = url || ''; }
+  };
+
+  // Helper: cancel all pending iframe timers
+  const clearAllIframeTimers = () => {
+    if (iframeLoadTimer) { clearTimeout(iframeLoadTimer); iframeLoadTimer = null; }
+    if (iframeSlowHintTimer) { clearTimeout(iframeSlowHintTimer); iframeSlowHintTimer = null; }
+    if (iframeAutoRetryTimer) { clearTimeout(iframeAutoRetryTimer); iframeAutoRetryTimer = null; }
   };
 
   // --- Determine target URL ---
@@ -800,39 +819,72 @@ function loadRealWebsiteIframe() {
 
   // Show frame wrapper
   realWebsiteFrameWrapper.style.display = 'block';
-  showLoader();
 
   // Get the actual iframe element (always fresh from DOM)
   const iframeEl = document.getElementById('realWebsiteIframe');
   if (!iframeEl) return;
 
-  // Clear any previous load timeout
-  if (iframeLoadTimer) { clearTimeout(iframeLoadTimer); iframeLoadTimer = null; }
+  // --- GUARD: if the iframe already has this URL loaded and timers are idle, do nothing ---
+  // This prevents repeated calls from renderChatBubblesPreview() from force-reloading the page.
+  const isSameUrl = iframeEl.src === targetUrl;
+  const noTimersRunning = !iframeLoadTimer && !iframeSlowHintTimer && !iframeAutoRetryTimer;
+  const errorVisible = errorEl && errorEl.style.display !== 'none';
+  if (isSameUrl && noTimersRunning && !errorVisible) {
+    // Already showing this URL with no pending load — just ensure loader is hidden
+    if (loader && loader.style.display !== 'none') hideLoader();
+    return;
+  }
+
+  // Cancel any pending timers from a previous call before starting new ones
+  clearAllIframeTimers();
+  showLoader();
+
+  let retryDone = false;
 
   // Listen for successful load
   iframeEl.onload = () => {
-    if (iframeLoadTimer) { clearTimeout(iframeLoadTimer); iframeLoadTimer = null; }
+    clearAllIframeTimers();
+    retryDone = false;
     hideLoader();
   };
 
-  // Timeout: if not loaded within 8s, show error fallback
+  // After 10s — show a "taking longer than usual" hint so user knows it's still trying
+  iframeSlowHintTimer = setTimeout(() => {
+    if (loaderSubText) loaderSubText.textContent = 'Taking a moment — server may be waking up...';
+  }, 10000);
+
+  // After 20s — auto-retry silently once (Render cold-start can take 20-30s)
+  iframeAutoRetryTimer = setTimeout(() => {
+    if (retryDone) return;
+    retryDone = true;
+    if (loaderSubText) loaderSubText.textContent = 'Still loading... retrying connection...';
+    iframeEl.src = '';
+    setTimeout(() => { iframeEl.src = targetUrl; }, 500);
+  }, 20000);
+
+  // Hard timeout: show the manual retry overlay only after 45s
   iframeLoadTimer = setTimeout(() => {
-    iframeLoadTimer = null;
+    clearAllIframeTimers();
     showError(targetUrl);
-  }, 8000);
+  }, 45000);
 
   // Set src to trigger navigation
   if (iframeEl.src !== targetUrl) {
     iframeEl.src = targetUrl;
   } else {
-    // Already loaded (cached) – hide loader immediately
-    setTimeout(() => hideLoader(), 600);
+    // Already pointed at targetUrl but timers expired or error was showing — force reload
+    iframeEl.src = '';
+    setTimeout(() => { iframeEl.src = targetUrl; }, 100);
   }
 }
 window.loadRealWebsiteIframe = loadRealWebsiteIframe;
 
 function unloadRealWebsiteIframe() {
+  // Cancel all pending iframe timers
   if (iframeLoadTimer) { clearTimeout(iframeLoadTimer); iframeLoadTimer = null; }
+  if (iframeSlowHintTimer) { clearTimeout(iframeSlowHintTimer); iframeSlowHintTimer = null; }
+  if (iframeAutoRetryTimer) { clearTimeout(iframeAutoRetryTimer); iframeAutoRetryTimer = null; }
+
   const iframeEl = document.getElementById('realWebsiteIframe');
   if (iframeEl && iframeEl.src !== 'about:blank' && iframeEl.src !== '') {
     iframeEl.onload = null;
@@ -1111,7 +1163,7 @@ function setupEventHandlers() {
     soundEnabled = !soundEnabled;
     soundToggleGlobal.className = soundEnabled ? 'sim-btn' : 'sim-btn primary';
     soundIconEl.textContent = soundEnabled ? '🔊' : '🔇';
-    soundToggleGlobal.innerHTML = `${soundEnabled ? '🔊' : '🔇'} Simulated Audio: ${soundEnabled ? 'Off' : 'On'}`;
+    soundToggleGlobal.innerHTML = `${soundEnabled ? '🔊' : '🔇'} Simulated Audio: ${soundEnabled ? 'On' : 'Off'}`;
 
     // Toggle global simulated tracks audio
     if (!soundEnabled && simulatedAudioPlayer) {
@@ -1497,6 +1549,27 @@ function setupEventHandlers() {
     });
   }
 
+  // Bulk Paste Chat Dialogue in Sidebar Customizer
+  const applyBulkChatReplaceBtn = document.getElementById('applyBulkChatReplaceBtn');
+  const applyBulkChatAppendBtn = document.getElementById('applyBulkChatAppendBtn');
+  const bulkChatPasteInput = document.getElementById('bulkChatPasteInput');
+
+  if (applyBulkChatReplaceBtn && bulkChatPasteInput) {
+    applyBulkChatReplaceBtn.addEventListener('click', () => {
+      const text = bulkChatPasteInput.value;
+      handleBulkChatImport(text, true);
+      bulkChatPasteInput.value = '';
+    });
+  }
+
+  if (applyBulkChatAppendBtn && bulkChatPasteInput) {
+    applyBulkChatAppendBtn.addEventListener('click', () => {
+      const text = bulkChatPasteInput.value;
+      handleBulkChatImport(text, false);
+      bulkChatPasteInput.value = '';
+    });
+  }
+
   // Mobile navigation and bottom sheets controls
   const mobileNavIdeasBtn = document.getElementById('mobileNavIdeasBtn');
   const mobileNavCustomizerBtn = document.getElementById('mobileNavCustomizerBtn');
@@ -1846,6 +1919,8 @@ function playTimeline() {
   if (playbackProgress >= 100 || playbackProgress === 0) {
     playbackProgress = 0;
     resetReelSimulator();
+    // Don't pre-load iframe here — it will be triggered at the transition phase (55%) to avoid
+    // wasting cold-start time before the user has even watched the chat sequence.
   }
 
   // Activate audio waveform visualizer animation
@@ -1910,6 +1985,9 @@ function pauseTimeline() {
   }
   clearTimeout(timelineTimer);
 
+  // Clear any stuck simulated typing text from the input bar
+  resetChatInputs();
+
   // Stop audio wave visualizer
   if (audioWaveVisualizer) {
     audioWaveVisualizer.classList.remove('playing');
@@ -1953,6 +2031,9 @@ function resetReelSimulator() {
 
   // Render chat feed clean
   chatFeedEl.innerHTML = '';
+
+  // Clear any stuck simulated typing text from the input bar
+  resetChatInputs();
 
   // Reset card styles and tilts
   const cardWrapper = document.querySelector('.card-glowing-wrapper');
@@ -2391,8 +2472,8 @@ function tickTimeline(progress) {
     transitionOverlayEl.style.pointerEvents = 'none';
     transitionOverlayEl.style.animation = 'none';
 
-    // Ensure real website iframe is unloaded during chatting phase
-    unloadRealWebsiteIframe();
+    // Remove phone screen shake classes if any
+    if (phoneScreenEl) phoneScreenEl.classList.remove('glitch-active');
 
     // Distribute the chat duration evenly among all bubbles
     const stepSize = 50 / Math.max(1, totalBubbles);
@@ -2405,6 +2486,8 @@ function tickTimeline(progress) {
     if (completedCount < totalBubbles) {
       const activeBubble = activeConfig.chatBubbles[completedCount];
       if (segmentProgress >= 0.85) {
+        // Bubble is being "sent" — clear the input bar immediately
+        resetChatInputs();
         targetCompletedCount = completedCount + 1;
       } else if (segmentProgress >= 0.15) {
         if (activeBubble.side === 'left') {
@@ -2497,7 +2580,6 @@ function tickTimeline(progress) {
     if (progress < 55) {
       sceneChatEl.classList.add('active');
       sceneRevealEl.classList.remove('active');
-      unloadRealWebsiteIframe();
     } else {
       sceneChatEl.classList.remove('active');
       if (!sceneRevealEl.classList.contains('active')) {
@@ -2519,6 +2601,11 @@ function tickTimeline(progress) {
       triggerTransitionOverlay();
     }
 
+    // Shaking trigger on phone viewport for glitch transition
+    if (activeConfig.transitionStyle === 'glitch' && phoneScreenEl) {
+      phoneScreenEl.classList.add('glitch-active');
+    }
+
     // Direct scale adjustment for blur transition to make it feel extra premium
     const blurEl = transitionOverlayEl.querySelector('.transition-blur');
     if (blurEl) {
@@ -2531,6 +2618,9 @@ function tickTimeline(progress) {
   else if (progress > 60) {
     resetCinematicZoom();
     sceneChatEl.classList.remove('active');
+
+    // Remove phone screen shake classes if any
+    if (phoneScreenEl) phoneScreenEl.classList.remove('glitch-active');
 
     // Hide transition overlay and reset its inline styles
     transitionOverlayEl.classList.remove('active');
@@ -2546,7 +2636,7 @@ function tickTimeline(progress) {
         soundMagic.play().catch(e => console.log('Audio blocked', e));
       }
 
-      // Dynamically load the real website iframe
+      // Ensure website iframe is loaded
       loadRealWebsiteIframe();
     }
   }
@@ -2559,12 +2649,7 @@ function triggerTransitionOverlay() {
   transitionOverlayEl.innerHTML = '';
 
   if (transStyle === 'sparkle') {
-    transitionOverlayEl.innerHTML = `
-      <div class="transition-sparkle">
-        <span class="sparkle-burst">💀✨</span>
-        <span style="font-family:var(--font-display); font-weight:800; font-size:1rem; color:#fff; text-shadow:0 0 10px rgba(255,255,255,0.8); margin-top:10px;">WISHCRAFT</span>
-      </div>
-    `;
+    triggerSparkleExplosion();
     if (soundEnabled) {
       soundTransition.currentTime = 0;
       soundTransition.play().catch(e => console.log(e));
@@ -2591,6 +2676,119 @@ function triggerTransitionOverlay() {
       soundTransition.play().catch(e => console.log(e));
     }
   }
+}
+
+// 2D Canvas Magical Sparkle Explosion transition animator
+function triggerSparkleExplosion() {
+  transitionOverlayEl.innerHTML = `<canvas id="transitionSparkleCanvas" style="width: 100%; height: 100%; position: absolute; inset: 0; pointer-events: none; z-index: 100;"></canvas>`;
+  const canvas = document.getElementById('transitionSparkleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  const rect = transitionOverlayEl.getBoundingClientRect();
+  canvas.width = rect.width * (window.devicePixelRatio || 1);
+  canvas.height = rect.height * (window.devicePixelRatio || 1);
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  
+  const width = rect.width;
+  const height = rect.height;
+  
+  const particles = [];
+  const colors = ['#c084fc', '#f472b6', '#60a5fa', '#34d399', '#fbbf24', '#ffffff'];
+  const shapes = ['star', 'heart', 'sparkle'];
+  
+  for (let i = 0; i < 50; i++) {
+    particles.push({
+      x: width / 2,
+      y: height / 2,
+      vx: (Math.random() - 0.5) * 14,
+      vy: (Math.random() - 0.5) * 14 - 3,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      alpha: 1.0,
+      decay: Math.random() * 0.025 + 0.015,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 0.2
+    });
+  }
+  
+  function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, color, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+      x = cx + Math.cos(rot) * outerRadius;
+      y = cy + Math.sin(rot) * outerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerRadius;
+      y = cy + Math.sin(rot) * innerRadius;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  function drawHeart(ctx, x, y, size, color, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y + size / 4);
+    ctx.quadraticCurveTo(x, y, x - size / 2, y);
+    ctx.quadraticCurveTo(x - size, y, x - size, y + size / 2);
+    ctx.quadraticCurveTo(x - size, y + size, x, y + size * 1.3);
+    ctx.quadraticCurveTo(x + size, y + size, x + size, y + size / 2);
+    ctx.quadraticCurveTo(x + size, y, x + size / 2, y);
+    ctx.quadraticCurveTo(x, y, x, y + size / 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  
+  function animate() {
+    if (playbackState !== 'playing' && playbackState !== 'transition' && !transitionOverlayEl.classList.contains('active')) return;
+    ctx.clearRect(0, 0, width, height);
+    
+    let activeCount = 0;
+    
+    particles.forEach(p => {
+      if (p.alpha <= 0) return;
+      activeCount++;
+      
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.12; // gravity
+      p.alpha -= p.decay;
+      p.rotation += p.rotationSpeed;
+      
+      if (p.shape === 'star') {
+        drawStar(ctx, p.x, p.y, 5, p.size, p.size / 2, p.color, Math.max(0, p.alpha));
+      } else if (p.shape === 'heart') {
+        drawHeart(ctx, p.x, p.y, p.size, p.color, Math.max(0, p.alpha));
+      } else {
+        // diamond sparkle
+        drawStar(ctx, p.x, p.y, 4, p.size, p.size / 4, p.color, Math.max(0, p.alpha));
+      }
+    });
+    
+    if (activeCount > 0) {
+      requestAnimationFrame(animate);
+    }
+  }
+  requestAnimationFrame(animate);
 }
 
 // Start dynamic particle system inside WishCraft Website mockup
@@ -3187,13 +3385,6 @@ function wrapText(ctx, text, maxWidth, font) {
   return lines;
 }
 
-// Trigger PNG Browser file downloads
-function triggerDownload(canvas, filename) {
-  const link = document.createElement('a');
-  link.download = filename;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-}
 // Trigger PNG Browser file downloads
 function triggerDownload(canvas, filename) {
   const link = document.createElement('a');
@@ -3889,7 +4080,7 @@ function updateRecordingButtonsLabel(text) {
 // Canvas Drawer: Renders the entire mobile simulator with precise alignments in 1080x1920
 function drawReelFrameToCanvas(ctx, w, h, progress, frameIdx) {
   // Clear Frame
-  ctx.clearRect(0, w, 0, h);
+  ctx.clearRect(0, 0, w, h);
 
   // 1. Draw Background Gradient
   const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 50, w / 2, h / 2, h / 2);
@@ -4866,14 +5057,7 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
     if (sidebarBadge) sidebarBadge.textContent = count;
     if (navBubbleCount) navBubbleCount.textContent = count;
   }
-  // Patch updateChatStats to also sync badges
-  const _origUpdateStats = window.updateChatStats;
-  if (typeof _origUpdateStats === 'function') {
-    window.updateChatStats = function () {
-      _origUpdateStats.apply(this, arguments);
-      syncBadges();
-    };
-  }
+  // Badges are now synced directly inside updateChatStats() — do an initial sync here for first render.
   setTimeout(syncBadges, 300);
 
   // --- Add bubble button in drawer header ---
@@ -4949,6 +5133,27 @@ Return ONLY the raw JSON array. Do not wrap in markdown or backticks.`;
     };
     drawerAiBtn.addEventListener('click', runDrawerAI);
     drawerAiPrompt.addEventListener('keydown', (e) => { if (e.key === 'Enter') runDrawerAI(); });
+
+    // Bulk Paste Chat Dialogue in Drawer
+    const drawerBulkChatReplaceBtn = document.getElementById('drawerBulkChatReplaceBtn');
+    const drawerBulkChatAppendBtn = document.getElementById('drawerBulkChatAppendBtn');
+    const drawerBulkChatInput = document.getElementById('drawerBulkChatInput');
+
+    if (drawerBulkChatReplaceBtn && drawerBulkChatInput) {
+      drawerBulkChatReplaceBtn.addEventListener('click', () => {
+        const text = drawerBulkChatInput.value;
+        handleBulkChatImport(text, true);
+        drawerBulkChatInput.value = '';
+      });
+    }
+
+    if (drawerBulkChatAppendBtn && drawerBulkChatInput) {
+      drawerBulkChatAppendBtn.addEventListener('click', () => {
+        const text = drawerBulkChatInput.value;
+        handleBulkChatImport(text, false);
+        drawerBulkChatInput.value = '';
+      });
+    }
   }
 })();
 
@@ -5130,4 +5335,85 @@ function updateCinematicZoomUI() {
       cinematicZoomBtn.innerHTML = '<span>🎥</span> Cam: Off';
     }
   }
+}
+
+// Bulk Paste Chat Parsing and Importing Logic
+function parseBulkChatText(text) {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  const parsedBubbles = [];
+  
+  const leftKeywords = ['left', 'sender', 'them', 'bae', 'chloe', 'boyfriend', 'girlfriend', 'him', 'her', 'other'];
+  const rightKeywords = ['right', 'me', 'you', 'hubby', 'wife', 'receiver', 'myself'];
+
+  let speakersSeen = [];
+  let lastSide = 'left';
+
+  for (let line of lines) {
+    // Strip timestamps like [12:34] or [12:34:56] or [12:34 PM] or 12:34 -
+    let cleanLine = line.replace(/^\[?\d{1,2}:\d{2}(?::\d{2})?\s*(?:[AP]M)?\]?\s*(?:-\s*)?/i, '').trim();
+    
+    // Match "Speaker: Text" or "[Speaker] Text" or "[Speaker]: Text"
+    const match = cleanLine.match(/^\[?([^\]\:]+)\]?\s*:\s*(.*)$/);
+    if (match) {
+      const speaker = match[1].trim().toLowerCase();
+      const msgText = match[2].trim();
+      
+      let side = 'left';
+      if (leftKeywords.includes(speaker)) {
+        side = 'left';
+      } else if (rightKeywords.includes(speaker)) {
+        side = 'right';
+      } else {
+        // Generic speaker name
+        if (!speakersSeen.includes(speaker)) {
+          speakersSeen.push(speaker);
+        }
+        const speakerIndex = speakersSeen.indexOf(speaker);
+        // Alternating based on order of appearance: first speaker is left, second is right
+        side = (speakerIndex % 2 === 0) ? 'left' : 'right';
+      }
+      parsedBubbles.push({ side, text: msgText });
+      lastSide = side;
+    } else {
+      // Line has no speaker prefix.
+      // Alternate side from the last bubble's side
+      const side = (lastSide === 'left') ? 'right' : 'left';
+      parsedBubbles.push({ side, text: cleanLine });
+      lastSide = side;
+    }
+  }
+  return parsedBubbles;
+}
+
+function handleBulkChatImport(text, replace = true) {
+  if (!text || !text.trim()) {
+    alert("Please paste some text dialogue first!");
+    return;
+  }
+  
+  const newBubbles = parseBulkChatText(text);
+  if (newBubbles.length === 0) {
+    alert("Could not parse any valid chat bubbles from the pasted text.");
+    return;
+  }
+  
+  if (replace) {
+    activeConfig.chatBubbles = newBubbles;
+  } else {
+    activeConfig.chatBubbles = activeConfig.chatBubbles.concat(newBubbles);
+  }
+  
+  // Re-apply config to UI, render lists, and update preview
+  applyConfigToUI();
+  stopTimeline();
+  resetReelSimulator();
+  
+  // Update badges
+  const drawerBadge = document.getElementById('bubbleDrawerBadge');
+  const sidebarBadge = document.getElementById('bubbleDrawerCount');
+  const navBubbleCount = document.getElementById('mobileNavBubbleCount');
+  const count = activeConfig.chatBubbles.length;
+  if (drawerBadge) drawerBadge.textContent = count;
+  if (sidebarBadge) sidebarBadge.textContent = count;
+  if (navBubbleCount) navBubbleCount.textContent = count;
 }
